@@ -129,7 +129,7 @@ func _process(_delta: float) -> void:
 					HexRTypes.HapticMode.PRESSURE:
 						cell.text = "%d" % roundi(s.intensity * 100.0)
 					HexRTypes.HapticMode.VIBRATION:
-						cell.text = "%g Hz" % snappedf(s.frequency, 0.1)
+						cell.text = str(snappedf(s.frequency, 0.1)) + " Hz"
 					HexRTypes.HapticMode.PULSE:
 						cell.text = "pulse"
 					_:

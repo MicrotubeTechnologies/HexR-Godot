@@ -82,6 +82,41 @@ func _exit_tree() -> void:
 func _ready() -> void:
 	if transport == null:
 		setup(HexRBleTransport.create(), HexRDeviceStore.new())
+	# The editor's HexR dock can drive the gloves of a running game (also on a headset) through
+	# the debugger connection.
+	if EngineDebugger.is_active() and not Engine.is_editor_hint():
+		EngineDebugger.register_message_capture("hexr", _on_debugger_message)
+
+
+var _debugger_report_at := 0
+
+
+func _on_debugger_message(message: String, data: Array) -> bool:
+	match message:
+		"toggle":
+			toggle_hand(data[0])
+		"press":
+			var g := glove(data[0])
+			g.bt_send(g.haptics.hexr_pressure(data[1], true, data[2], 1.0))
+		"vibrate":
+			var g := glove(data[0])
+			g.bt_send(g.haptics.hexr_vibration(data[1], true, data[2], data[3]))
+		"release":
+			glove(data[0]).release_all_channels()
+		_:
+			return false
+	return true
+
+
+func _report_to_debugger(now_ms: int) -> void:
+	if now_ms < _debugger_report_at:
+		return
+	_debugger_report_at = now_ms + 250
+	var hands := []
+	for g in [left, right]:
+		hands.append([g.ble_connected, is_hand_connecting(g.hand), g.status_text, g.get_battery_level(), g.mtu,
+				Array(g.get_air_pressure_kpa()), g.decoder.bad_frames])
+	EngineDebugger.send_message("hexr:status", [transport.get_kind(), hands])
 
 
 ## Uses [param p_transport] for both gloves. Called automatically with the platform's transport;
@@ -141,6 +176,8 @@ func tick(now_ms: int) -> void:
 	transport.poll(now_ms)
 	left.tick(now_ms)
 	right.tick(now_ms)
+	if EngineDebugger.is_active() and not Engine.is_editor_hint():
+		_report_to_debugger(now_ms)
 
 
 # -- connecting -----------------------------------------------------------------------------
