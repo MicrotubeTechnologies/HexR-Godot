@@ -38,10 +38,15 @@ var device_store: HexRDeviceStore
 var left: HexRGlove
 var right: HexRGlove
 ## The scene's Pressure Controllers, set when they enter the tree.
-var left_controller: Node
-var right_controller: Node
+var left_controller: HexRPressureController
+var right_controller: HexRPressureController
+## The scene's tracked hands, set when they enter the tree.
+var left_hand: HexRTrackedHand
+var right_hand: HexRTrackedHand
 ## When false, nothing advances until [method tick] is called (tests drive time themselves).
 var drive_from_process := true
+
+static var _instance: HexRManager
 
 var _scan_waiters: Array[HexRGlove] = []
 var _permission_waiters: Array[HexRGlove] = []
@@ -51,6 +56,27 @@ var _awaiting_permission := false
 func _init() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	process_priority = -1000
+
+
+## The running HexR manager: the HexR autoload, or one made current with [method make_current].
+## Addon scripts use this rather than the autoload's name.
+static func get_instance() -> HexRManager:
+	return _instance if is_instance_valid(_instance) else null
+
+
+## Makes this manager the one components talk to (tests, editor tools).
+func make_current() -> void:
+	_instance = self
+
+
+func _enter_tree() -> void:
+	if get_instance() == null:
+		_instance = self
+
+
+func _exit_tree() -> void:
+	if _instance == self:
+		_instance = null
 
 
 func _ready() -> void:
@@ -264,11 +290,36 @@ func _on_notified(id: String, data: PackedByteArray) -> void:
 # -- Pressure Controllers -------------------------------------------------------------------
 
 ## The Pressure Controller for [param hand], or null if the scene has none.
-func controller(hand: int) -> Node:
+func controller(hand: int) -> HexRPressureController:
 	return left_controller if hand == HexRTypes.Hand.LEFT else right_controller
 
 
-func _register_controller(c: Node, hand: int) -> void:
+## The tracked hand for [param hand], or null if the scene has none.
+func tracked_hand(hand: int) -> HexRTrackedHand:
+	return left_hand if hand == HexRTypes.Hand.LEFT else right_hand
+
+
+## How curled each finger of [param hand] is, or null without a tracked hand.
+func finger_use(hand: int) -> HexRFingerUseTracking:
+	var h := tracked_hand(hand)
+	return h.finger_use if h else null
+
+
+func _register_hand(h: HexRTrackedHand) -> void:
+	if h.hand == HexRTypes.Hand.LEFT:
+		left_hand = h
+	else:
+		right_hand = h
+
+
+func _unregister_hand(h: HexRTrackedHand) -> void:
+	if left_hand == h:
+		left_hand = null
+	if right_hand == h:
+		right_hand = null
+
+
+func _register_controller(c: HexRPressureController, hand: int) -> void:
 	if hand == HexRTypes.Hand.LEFT:
 		left_controller = c
 	else:

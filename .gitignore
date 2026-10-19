@@ -21,3 +21,4 @@
 # Godot's Android build template (installed per machine by the export)
 /android/
 /build/
+/override.cfg

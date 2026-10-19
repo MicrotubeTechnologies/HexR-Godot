@@ -16,12 +16,13 @@ permissions:
 
 jobs:
   gdscript:
-    name: GDScript tests (Godot ${{ matrix.godot }})
+    name: GDScript tests (Godot ${{ matrix.godot }}, ${{ matrix.physics }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         godot: ["4.6.3", "4.7.2"]
+        physics: ["Jolt Physics", "GodotPhysics3D"]
     steps:
       - uses: actions/checkout@v4
       - name: Golden frames are current
@@ -31,15 +32,20 @@ jobs:
           curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${{ matrix.godot }}-stable/Godot_v${{ matrix.godot }}-stable_linux.x86_64.zip"
           unzip -q godot.zip
           mv "Godot_v${{ matrix.godot }}-stable_linux.x86_64" godot
+      - name: Physics engine
+        run: printf '[physics]
+
+3d/physics_engine="%s"
+' "${{ matrix.physics }}" > override.cfg
       - name: Import
         run: ./godot --headless --path . --import || true
       - name: Tests
-        run: ./godot --headless --path . -s res://tests/run_tests.gd -- --junit=tests/results-${{ matrix.godot }}.xml
+        run: ./godot --headless --path . -s res://tests/run_tests.gd -- --junit=tests/results.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-${{ matrix.godot }}
-          path: tests/results-*.xml
+          name: test-results-${{ matrix.godot }}-${{ strategy.job-index }}
+          path: tests/results.xml
 
   android:
     name: Android plugins
