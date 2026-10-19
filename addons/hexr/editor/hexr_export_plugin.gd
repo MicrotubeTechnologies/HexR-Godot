@@ -31,8 +31,12 @@ func _export_begin(features: PackedStringArray, _is_debug: bool, _path: String, 
 
 
 func _export_file(path: String, _type: String, features: PackedStringArray) -> void:
-	# The Windows Bluetooth extension has nothing to load on other platforms.
-	if path == WINDOWS_EXTENSION and not features.has("windows"):
+	# The Bluetooth extension ships libraries for Windows, Linux, macOS and Android (stubs on all
+	# but Windows). Anywhere else there is nothing to load, so leave it out.
+	if path == WINDOWS_EXTENSION:
+		for platform in ["windows", "linux", "macos", "android"]:
+			if features.has(platform):
+				return
 		skip()
 
 

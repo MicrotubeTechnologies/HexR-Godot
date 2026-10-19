@@ -113,6 +113,10 @@ jobs:
             platform: linux
           - os: macos-latest
             platform: macos
+          # Android loads the stub so the headset does not log a missing library at start-up;
+          # Bluetooth there goes through the HexRBle Java plugin.
+          - os: ubuntu-latest
+            platform: android
     steps:
       - uses: actions/checkout@v4
         with:
@@ -124,8 +128,10 @@ jobs:
       - name: Build
         working-directory: gdextension
         run: |
-          scons platform=${{ matrix.platform }} target=template_debug -j4
-          scons platform=${{ matrix.platform }} target=template_release -j4
+          EXTRA=""
+          if [ "${{ matrix.platform }}" = "android" ]; then EXTRA="arch=arm64 ndk_version=$(basename "$ANDROID_NDK_LATEST_HOME")"; fi
+          scons platform=${{ matrix.platform }} target=template_debug $EXTRA -j4
+          scons platform=${{ matrix.platform }} target=template_release $EXTRA -j4
       - uses: actions/upload-artifact@v4
         with:
           name: stub-${{ matrix.platform }}
@@ -164,6 +170,10 @@ jobs:
         with:
           name: stub-macos
           path: addons/hexr/bin/macos
+      - uses: actions/download-artifact@v4
+        with:
+          name: stub-android
+          path: addons/hexr/bin/android
       - name: Zip
         run: |
           cp LICENSE THIRD-PARTY-NOTICES.md addons/hexr/
