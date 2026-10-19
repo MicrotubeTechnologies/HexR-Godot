@@ -22,3 +22,6 @@
 /android/
 /build/
 /override.cfg
+/addons/hexr/bin/android/
+/addons/hexr/bin/linux/
+/addons/hexr/bin/macos/
