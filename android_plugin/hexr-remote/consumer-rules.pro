@@ -1,0 +1,2 @@
+-keep class com.microtube.hexr.godot.remote.** { *; }
+-keep class com.microtube.hexr.remote.** { *; }

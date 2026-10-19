@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+# Builds the HexRBleWinRT GDExtension into ../addons/hexr/bin/<platform>/.
+#
+#   scons platform=windows target=template_debug    (the editor uses this one too)
+#   scons platform=windows target=template_release
+#   scons platform=linux target=template_debug      (a stub, so the editor loads cleanly there)
+#
+# Windows needs MSVC with the Windows 10 SDK (for the C++/WinRT headers). CI builds every
+# platform; see .github/workflows/ci.yml.
+
+env = SConscript("godot-cpp/SConstruct")
+
+env.Append(CPPPATH=["src/"])
+sources = Glob("src/*.cpp")
+
+if env["platform"] == "windows":
+    if env.get("is_msvc", False):
+        env.Append(CXXFLAGS=["/EHsc", "/bigobj", "/permissive-"])
+    env.Append(LIBS=["windowsapp"])
+
+if env["platform"] == "macos":
+    library = env.SharedLibrary(
+        "../addons/hexr/bin/macos/hexr_ble_win.{}.{}.framework/hexr_ble_win.{}.{}".format(
+            env["platform"], env["target"], env["platform"], env["target"]
+        ),
+        source=sources,
+    )
+else:
+    library = env.SharedLibrary(
+        "../addons/hexr/bin/{}/hexr_ble_win{}{}".format(env["platform"], env["suffix"], env["SHLIBSUFFIX"]),
+        source=sources,
+    )
+
+Default(library)

@@ -1,0 +1,18 @@
+; HexR's Windows Bluetooth extension (HexRBleWinRT). Real Bluetooth on Windows, in the editor
+; and in Windows builds. The Linux and macOS libraries are stubs so the editor loads cleanly there;
+; Android uses the HexRBle Java plugin instead, and the export plugin leaves this file out.
+
+[configuration]
+
+entry_symbol = "hexr_ble_library_init"
+compatibility_minimum = "4.6"
+reloadable = false
+
+[libraries]
+
+windows.debug.x86_64 = "res://addons/hexr/bin/windows/hexr_ble_win.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://addons/hexr/bin/windows/hexr_ble_win.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "res://addons/hexr/bin/linux/hexr_ble_win.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://addons/hexr/bin/linux/hexr_ble_win.linux.template_release.x86_64.so"
+macos.debug = "res://addons/hexr/bin/macos/hexr_ble_win.macos.template_debug.framework"
+macos.release = "res://addons/hexr/bin/macos/hexr_ble_win.macos.template_release.framework"

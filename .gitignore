@@ -6,9 +6,9 @@
 /addons/hexr/android/bin/*.aar
 /addons/hexr/bin/windows/*.dll
 /addons/hexr/bin/windows/*.pdb
-/android/.gradle/
-/android/**/build/
-/android/local.properties
+/android_plugin/.gradle/
+/android_plugin/**/build/
+/android_plugin/local.properties
 /gdextension/**/*.obj
 /gdextension/**/*.os
 /gdextension/**/*.lib
@@ -17,3 +17,7 @@
 
 # Test output
 /tests/results*.xml
+
+# Godot's Android build template (installed per machine by the export)
+/android/
+/build/

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Merged into the game's manifest by Godot's Gradle build.
+
+  The permissions are the ones the Unity package's hexrbluetooth.androidlib declares, which are
+  proven on Meta Quest and PICO, minus the entries only its old third-party Bluetooth plugin
+  needed (its helper activity and the companion-device entries).
+
+  Keep comments free of double hyphens: Gradle parses this file and XML forbids them.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Android 11 and older: Bluetooth plus location, which scanning needs there. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+
+    <!-- Android 12 and newer: the Nearby devices permissions. Scan results are never used
+         to work out location. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+
+    <application>
+        <meta-data
+            android:name="org.godotengine.plugin.v2.HexRBle"
+            android:value="com.microtube.hexr.godot.ble.HexRBlePlugin" />
+    </application>
+</manifest>

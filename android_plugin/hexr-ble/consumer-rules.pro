@@ -1,0 +1,1 @@
+-keep class com.microtube.hexr.godot.ble.** { *; }

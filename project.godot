@@ -6,6 +6,7 @@ config_version=5
 
 config/name="HexR-Godot (dev)"
 config/description="Development and test host for the HexR Godot addon."
+run/main_scene="res://tests/smoke/ble_smoke.tscn"
 config/features=PackedStringArray("4.6")
 
 [debug]
@@ -16,3 +17,21 @@ gdscript/warnings/untyped_declaration=0
 
 3d_physics/layer_20="hexr_touch"
 3d_physics/layer_21="hexr_interactable"
+
+[autoload]
+
+HexR="*res://addons/hexr/core/hexr_manager.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/hexr/plugin.cfg")
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=1000
+window/stretch/mode="canvas_items"
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true
