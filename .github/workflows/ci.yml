@@ -1,0 +1,170 @@
+name: CI
+
+# Every push: GDScript tests on the oldest and newest supported Godot, the Android plugins with
+# their JVM tests, the Windows Bluetooth extension (plus Linux and macOS stubs), and the addon zip.
+# A v* tag also publishes the zip as a release.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gdscript:
+    name: GDScript tests (Godot ${{ matrix.godot }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        godot: ["4.6.3", "4.7.2"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Golden frames are current
+        run: python3 tools/gen_golden_frames.py --check
+      - name: Get Godot
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${{ matrix.godot }}-stable/Godot_v${{ matrix.godot }}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${{ matrix.godot }}-stable_linux.x86_64" godot
+      - name: Import
+        run: ./godot --headless --path . --import || true
+      - name: Tests
+        run: ./godot --headless --path . -s res://tests/run_tests.gd -- --junit=tests/results-${{ matrix.godot }}.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.godot }}
+          path: tests/results-*.xml
+
+  android:
+    name: Android plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Build and test
+        working-directory: android_plugin
+        run: ./gradlew --no-daemon :hexr-ble:testDebugUnitTest copyAarsToAddon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-aars
+          path: addons/hexr/android/bin/*.aar
+          if-no-files-found: error
+
+  windows:
+    name: Windows Bluetooth extension
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: SCons
+        run: python -m pip install scons==4.8.1
+      - name: Build
+        working-directory: gdextension
+        run: |
+          scons platform=windows arch=x86_64 target=template_debug -j4
+          scons platform=windows arch=x86_64 target=template_release -j4
+      - name: Get Godot
+        shell: bash
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip"
+          unzip -q godot.zip
+      - name: Extension smoke test
+        shell: bash
+        run: |
+          ./Godot_v4.7.2-stable_win64_console.exe --headless --path . --import || true
+          ./Godot_v4.7.2-stable_win64_console.exe --headless --path . -s res://tests/smoke/windows_ext_smoke.gd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-dlls
+          path: addons/hexr/bin/windows/*.dll
+          if-no-files-found: error
+
+  stubs:
+    name: Extension stub (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: macos
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install scons==4.8.1
+      - name: Build
+        working-directory: gdextension
+        run: |
+          scons platform=${{ matrix.platform }} target=template_debug -j4
+          scons platform=${{ matrix.platform }} target=template_release -j4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stub-${{ matrix.platform }}
+          path: addons/hexr/bin/${{ matrix.platform }}/
+          if-no-files-found: error
+
+  package:
+    name: Addon zip
+    needs: [gdscript, android, windows, stubs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=$(python3 tools/check_version.py --tag "${GITHUB_REF_NAME}")" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(python3 tools/check_version.py)" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-aars
+          path: addons/hexr/android/bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-dlls
+          path: addons/hexr/bin/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: stub-linux
+          path: addons/hexr/bin/linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: stub-macos
+          path: addons/hexr/bin/macos
+      - name: Zip
+        run: |
+          cp LICENSE THIRD-PARTY-NOTICES.md addons/hexr/
+          zip -qr "HexR-Godot-${{ steps.version.outputs.version }}.zip" addons/hexr
+          unzip -l "HexR-Godot-${{ steps.version.outputs.version }}.zip" | tail -3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HexR-Godot-${{ steps.version.outputs.version }}
+          path: HexR-Godot-*.zip
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: HexR-Godot-*.zip
+          generate_release_notes: true
