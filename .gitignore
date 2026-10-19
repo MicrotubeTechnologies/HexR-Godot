@@ -1,0 +1,19 @@
+# Godot
+.godot/
+*.tmp
+
+# Native build outputs (CI builds them; the release zip carries them)
+/addons/hexr/android/bin/*.aar
+/addons/hexr/bin/windows/*.dll
+/addons/hexr/bin/windows/*.pdb
+/android/.gradle/
+/android/**/build/
+/android/local.properties
+/gdextension/**/*.obj
+/gdextension/**/*.os
+/gdextension/**/*.lib
+/gdextension/**/*.exp
+/gdextension/.sconsign*.dblite
+
+# Test output
+/tests/results*.xml

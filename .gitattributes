@@ -1,0 +1,15 @@
+* text=auto eol=lf
+*.png binary
+*.jar binary
+*.aar binary
+*.dll binary
+
+# Keep the GitHub "Download ZIP" and Asset Library downloads to the addon itself.
+/.github export-ignore
+/android export-ignore
+/docs export-ignore
+/gdextension export-ignore
+/tests export-ignore
+/tools export-ignore
+/project.godot export-ignore
+/icon.svg export-ignore

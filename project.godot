@@ -1,0 +1,18 @@
+; HexR-Godot development and test project. The shipped addon is addons/hexr/.
+
+config_version=5
+
+[application]
+
+config/name="HexR-Godot (dev)"
+config/description="Development and test host for the HexR Godot addon."
+config/features=PackedStringArray("4.6")
+
+[debug]
+
+gdscript/warnings/untyped_declaration=0
+
+[layer_names]
+
+3d_physics/layer_20="hexr_touch"
+3d_physics/layer_21="hexr_interactable"
