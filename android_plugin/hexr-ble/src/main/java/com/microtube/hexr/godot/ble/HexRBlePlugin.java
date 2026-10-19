@@ -216,6 +216,12 @@ public class HexRBlePlugin extends GodotPlugin implements BleEngine.Listener {
         return Build.MODEL;
     }
 
+    /** The app's package name (HexR Remote's appId). */
+    @UsedByGodot
+    public String getPackageName() {
+        return getContext().getPackageName();
+    }
+
     /** The name the owner gave the device, or "" if none is readable. */
     @UsedByGodot
     public String getDeviceName() {
