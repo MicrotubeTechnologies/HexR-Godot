@@ -108,10 +108,13 @@ python tools/remote_conformance.py --godot path/to/godot
 cd android_plugin && ./gradlew :hexr-ble:testDebugUnitTest copyAarsToAddon
 ```
 
-The Windows extension needs MSVC with the Windows SDK (`scons platform=windows target=template_debug`);
-CI builds it on `windows-2022`, with stubs for Linux, macOS and Android, and packages the addon zip.
-A `v*` tag publishes the zip as a release; `tools/check_version.py` makes sure `plugin.cfg`,
-`HexRManager.VERSION` and `CHANGELOG.md` agree first.
+The Windows extension needs MSVC with the Windows SDK (`scons platform=windows target=template_debug`).
+CI runs the GDScript tests on every push. The native code (the Android plugins, the Windows extension
+on `windows-2022`, the Linux, macOS and Android stubs) and the addon zip build only on a `v*` tag or
+a manual run (**Actions → CI → Run workflow**), because they take most of the CI minutes. A `v*` tag
+publishes the zip as a release; `tools/check_version.py` makes sure `plugin.cfg`,
+`HexRManager.VERSION` and `CHANGELOG.md` agree first, and `tools/check_gdextension.py` that every
+library the extension lists is in the zip.
 
 The protocol must stay byte-identical to the Unity package: change `tests/fixtures/golden_frames.json`
 or `docs/RemoteProtocol.md` only together with the Unity package and the HexR Companion.

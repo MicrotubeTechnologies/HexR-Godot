@@ -40,7 +40,7 @@ func _enter_tree() -> void:
 	add_debugger_plugin(_debugger)
 	_dock = HexRDock.new()
 	_dock.debugger = _debugger
-	add_control_to_dock(DOCK_SLOT_RIGHT_UL, _dock)
+	add_control_to_dock(DOCK_SLOT_RIGHT_BL, _dock)
 	_menu = PopupMenu.new()
 	_menu.add_item("Create HexR Rig", 0)
 	_menu.add_item("Add HexR Menu", 1)
