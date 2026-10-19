@@ -33,10 +33,10 @@ jobs:
           unzip -q godot.zip
           mv "Godot_v${{ matrix.godot }}-stable_linux.x86_64" godot
       - name: Physics engine
-        run: printf '[physics]
-
-3d/physics_engine="%s"
-' "${{ matrix.physics }}" > override.cfg
+        run: |
+          echo "[physics]" > override.cfg
+          echo "3d/physics_engine=\"${{ matrix.physics }}\"" >> override.cfg
+          cat override.cfg
       - name: Import
         run: ./godot --headless --path . --import || true
       - name: Tests
