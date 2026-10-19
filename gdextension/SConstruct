@@ -18,8 +18,9 @@ if env["platform"] == "windows":
         env.Append(CXXFLAGS=["/EHsc", "/bigobj", "/permissive-"])
     env.Append(LIBS=["windowsapp"])
 
-# SHLIBPREFIX="": SCons would add "lib" on Linux, macOS and Android, and the names must match
-# addons/hexr/bin/hexr_ble_win.gdextension exactly (tools/check_gdextension.py checks them).
+# The names must match addons/hexr/bin/hexr_ble_win.gdextension exactly (tools/check_gdextension.py
+# checks them). SCons adds "lib" on Linux, macOS and Android; only Android keeps it, because
+# Godot's Android export refuses .so files whose names do not start with "lib".
 if env["platform"] == "macos":
     library = env.SharedLibrary(
         "../addons/hexr/bin/macos/hexr_ble_win.{}.{}.framework/hexr_ble_win.{}.{}".format(
@@ -32,7 +33,7 @@ else:
     library = env.SharedLibrary(
         "../addons/hexr/bin/{}/hexr_ble_win{}{}".format(env["platform"], env["suffix"], env["SHLIBSUFFIX"]),
         source=sources,
-        SHLIBPREFIX="",
+        SHLIBPREFIX="lib" if env["platform"] == "android" else "",
     )
 
 Default(library)
