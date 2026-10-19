@@ -132,6 +132,19 @@ jobs:
           if [ "${{ matrix.platform }}" = "android" ]; then EXTRA="arch=arm64 ndk_version=$(basename "$ANDROID_NDK_LATEST_HOME")"; fi
           scons platform=${{ matrix.platform }} target=template_debug $EXTRA -j4
           scons platform=${{ matrix.platform }} target=template_release $EXTRA -j4
+      - name: Stub smoke test
+        # The Android stub is checked on a headset: no runner can load an arm64 Android library.
+        if: matrix.platform != 'android'
+        run: |
+          if [ "${{ matrix.platform }}" = "linux" ]; then
+            ZIP=Godot_v4.7.2-stable_linux.x86_64.zip; GODOT="$RUNNER_TEMP/Godot_v4.7.2-stable_linux.x86_64"
+          else
+            ZIP=Godot_v4.7.2-stable_macos.universal.zip; GODOT="$RUNNER_TEMP/Godot.app/Contents/MacOS/Godot"
+          fi
+          curl -sSL -o "$RUNNER_TEMP/godot.zip" "https://github.com/godotengine/godot/releases/download/4.7.2-stable/$ZIP"
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP"
+          "$GODOT" --headless --path . --import || true
+          "$GODOT" --headless --path . -s res://tests/smoke/windows_ext_smoke.gd
       - uses: actions/upload-artifact@v4
         with:
           name: stub-${{ matrix.platform }}
@@ -174,6 +187,8 @@ jobs:
         with:
           name: stub-android
           path: addons/hexr/bin/android
+      - name: Every library the extension lists is there
+        run: python3 tools/check_gdextension.py
       - name: Zip
         run: |
           cp LICENSE THIRD-PARTY-NOTICES.md addons/hexr/

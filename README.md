@@ -89,7 +89,7 @@ addons/hexr/        the addon (what ships)
 android_plugin/     Gradle project: hexr-ble and hexr-remote AARs (Java, no AndroidX)
 gdextension/        C++/WinRT Bluetooth extension, godot-cpp submodule (godot-4.5-stable)
 tests/              headless GDScript tests, fixtures, the Remote harness, smoke scenes
-tools/              golden-frame generator, Remote conformance check, version check
+tools/              golden-frame generator, Remote conformance check, version and library checks
 docs/               RemoteProtocol.md (shared with the Unity package)
 ```
 

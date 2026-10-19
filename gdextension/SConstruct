@@ -18,17 +18,21 @@ if env["platform"] == "windows":
         env.Append(CXXFLAGS=["/EHsc", "/bigobj", "/permissive-"])
     env.Append(LIBS=["windowsapp"])
 
+# SHLIBPREFIX="": SCons would add "lib" on Linux, macOS and Android, and the names must match
+# addons/hexr/bin/hexr_ble_win.gdextension exactly (tools/check_gdextension.py checks them).
 if env["platform"] == "macos":
     library = env.SharedLibrary(
         "../addons/hexr/bin/macos/hexr_ble_win.{}.{}.framework/hexr_ble_win.{}.{}".format(
             env["platform"], env["target"], env["platform"], env["target"]
         ),
         source=sources,
+        SHLIBPREFIX="",
     )
 else:
     library = env.SharedLibrary(
         "../addons/hexr/bin/{}/hexr_ble_win{}{}".format(env["platform"], env["suffix"], env["SHLIBSUFFIX"]),
         source=sources,
+        SHLIBPREFIX="",
     )
 
 Default(library)
