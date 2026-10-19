@@ -215,3 +215,5 @@ jobs:
         with:
           files: HexR-Godot-*.zip
           generate_release_notes: true
+          # 0.x releases are previews.
+          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}

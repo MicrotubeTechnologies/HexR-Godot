@@ -3,7 +3,7 @@
 The HexR Godot addon. Versions follow semver; the HexR Remote protocol level it speaks is
 `HexRManager.PROTOCOL_VERSION` (the Unity package version it matches).
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-10-19)
 
 First Godot release.
 
