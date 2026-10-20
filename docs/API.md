@@ -9,10 +9,10 @@ signatures). Intensities are 0.1–1 (about 15–50 kPa); frequencies are in Hz.
 
 ## Contents
 
-- **Gloves and connection**: [`HexRManager`](#hexrmanager), [`HexRGlove`](#hexrglove), [`HexRHaptics`](#hexrhaptics), [`HexRTypes`](#hexrtypes), [`HexRFrameDecoder`](#hexrframedecoder)
-- **Hands**: [`HexRRig`](#hexrrig), [`HexRTrackedHand`](#hexrtrackedhand), [`HexRTouchPoint`](#hexrtouchpoint), [`HexRFingerUseTracking`](#hexrfingerusetracking)
-- **Haptics**: [`HexRPressureController`](#hexrpressurecontroller)
-- **Scene nodes**: [`HexRGrabbable`](#hexrgrabbable), [`HexRPhysicalButton`](#hexrphysicalbutton), [`HexRSpecialHaptics`](#hexrspecialhaptics), [`HexRUsable`](#hexrusable), [`HexRProximityCheck`](#hexrproximitycheck), [`HexRInteractableHaptics`](#hexrinteractablehaptics), [`HexRXRToolsBinding`](#hexrxrtoolsbinding)
+- **Gloves and connection**: [`HexRManager`](#hexrmanager), [`HaptGloveHandler`](#haptglovehandler), [`Haptics`](#haptics), [`HexRTypes`](#hexrtypes), [`HexRFrameDecoder`](#hexrframedecoder)
+- **Hands**: [`HexRRig`](#hexrrig), [`HexRTrackedHand`](#hexrtrackedhand), [`HapticFingerTrigger`](#hapticfingertrigger), [`FingerUseTracking`](#fingerusetracking)
+- **Haptics**: [`PressureTrackerMain`](#pressuretrackermain)
+- **Scene nodes**: [`HexRGrabbable`](#hexrgrabbable), [`HexRPhysicalButton`](#hexrphysicalbutton), [`SpecialHaptics`](#specialhaptics), [`HexRUsable`](#hexrusable), [`ProximityCheck`](#proximitycheck), [`HexRInteractableHaptics`](#hexrinteractablehaptics), [`HexRXRToolsBinding`](#hexrxrtoolsbinding)
 - **Menu and HexR Remote**: [`HexRFloatingMenu`](#hexrfloatingmenu), [`HexRRemote`](#hexrremote)
 - [Internals](#internals)
 
@@ -50,10 +50,10 @@ It survives scene changes, as autoloads do. Scenes bring their own rig (tracked 
 
 - **`transport: HexRBleTransport`**
 - **`device_store: HexRDeviceStore`**
-- **`left: HexRGlove`**
-- **`right: HexRGlove`**
-- **`left_controller: HexRPressureController`** — The scene's Pressure Controllers, set when they enter the tree.
-- **`right_controller: HexRPressureController`**
+- **`left: HaptGloveHandler`**
+- **`right: HaptGloveHandler`**
+- **`left_controller: PressureTrackerMain`** — The scene's Pressure Controllers, set when they enter the tree.
+- **`right_controller: PressureTrackerMain`**
 - **`left_hand: HexRTrackedHand`** — The scene's tracked hands, set when they enter the tree.
 - **`right_hand: HexRTrackedHand`**
 - **`drive_from_process := true`** — When false, nothing advances until `tick()` is called (tests drive time themselves).
@@ -64,15 +64,15 @@ It survives scene changes, as autoloads do. Scenes bring their own rig (tracked 
 - **`make_current() -> void`** — Makes this manager the one components talk to (tests, editor tools).
 - **`setup(p_transport: HexRBleTransport, store: HexRDeviceStore) -> void`** — Uses `p_transport` for both gloves. Called automatically with the platform's transport; call it first to supply another (tests, simulated gloves).
 - **`tick(now_ms: int) -> void`** — Advances the transport and both gloves to `now_ms`.
-- **`glove(hand: int) -> HexRGlove`**
+- **`glove(hand: int) -> HaptGloveHandler`**
 - **`connect_hand(hand: int) -> void`** — Connects that hand's glove, asking for Bluetooth permission first where the platform needs it. Does nothing if it is connected or already connecting, so it is safe to call at any time.
 - **`disconnect_hand(hand: int) -> void`** — Releases every channel on that hand's glove and disconnects it, or cancels a connect in progress.
 - **`toggle_hand(hand: int) -> void`** — What a menu's Connect button does: connect, cancel a connect in progress, or disconnect.
 - **`is_hand_connected(hand: int) -> bool`**
 - **`is_hand_connecting(hand: int) -> bool`** — True while waiting for permission, scanning, connecting or waiting to retry.
-- **`controller(hand: int) -> HexRPressureController`** — The Pressure Controller for `hand`, or null if the scene has none.
+- **`controller(hand: int) -> PressureTrackerMain`** — The Pressure Controller for `hand`, or null if the scene has none.
 - **`tracked_hand(hand: int) -> HexRTrackedHand`** — The tracked hand for `hand`, or null if the scene has none.
-- **`finger_use(hand: int) -> HexRFingerUseTracking`** — How curled each finger of `hand` is, or null without a tracked hand.
+- **`finger_use(hand: int) -> FingerUseTracking`** — How curled each finger of `hand` is, or null without a tracked hand.
 - **`shutdown() -> void`** — Releases and disconnects both gloves.
 
 ### Constants
@@ -80,9 +80,9 @@ It survives scene changes, as autoloads do. Scenes bring their own rig (tracked 
 - **`VERSION := "0.1.0"`** — The addon's version.
 - **`PROTOCOL_VERSION := "0.10.5"`** — The HexR Remote protocol level this addon implements (the Unity package version it matches).
 
-## HexRGlove
+## HaptGloveHandler
 
-*extends `Node` · `addons/hexr/core/hexr_glove.gd`*
+*extends `Node` · `addons/hexr/core/hapt_glove_handler.gd`*
 
 One glove: its Bluetooth connection, the commands sent to it and the readings it sends back. Port of the Unity package's HaptGloveHandler. Reach them as `HexR.left` and `HexR.right`.
 
@@ -104,7 +104,7 @@ Before the link closes, on pause and on quit, every channel is released: once di
 ### Properties
 
 - **`hand: int = HexRTypes.Hand.LEFT`** — Which hand this glove is.
-- **`haptics := HexRHaptics.new()`** — Builds the commands and records the last one per channel.
+- **`haptics := Haptics.new()`** — Builds the commands and records the last one per channel.
 - **`decoder := HexRFrameDecoder.new()`** — The glove's latest readings.
 - **`coalescer := HexRWriteCoalescer.new()`** — Batches commands into at most one write per interval.
 - **`release_when_paused := true`** — Release every channel when the app is paused (on a headset, when it is taken off). A paused app cannot release anything itself, so without this the glove keeps pressing until it resumes.
@@ -132,7 +132,7 @@ Before the link closes, on pause and on quit, every channel is released: once di
 - **`forget_device() -> void`**
 - **`connect_to_device(id: String) -> void`** — Remembers `id` and connects to it.
 - **`tick(now_ms: int) -> void`** — Advances timers and flushes queued commands. HexR calls this every frame.
-- **`bt_send(data: PackedByteArray) -> bool`** — Sends frames built by `haptics` (or [`HexRHaptics`](#hexrhaptics) directly). Queued and batched where the platform needs it. Dropped while disconnected: a command for a grab that is over is better lost than delivered late.
+- **`bt_send(data: PackedByteArray) -> bool`** — Sends frames built by `haptics` (or [`Haptics`](#haptics) directly). Queued and batched where the platform needs it. Dropped while disconnected: a command for a grab that is over is better lost than delivered late.
 - **`release_all_channels() -> void`** — Releases every channel.
 - **`release_channels(fingers: Array) -> void`** — Releases `fingers` on both the pressure and the vibration path.
 - **`air_pressure_source_control() -> void`** — Starts the air pump, or stops it if started (as the Unity package's AirPressureSourceControl).
@@ -146,13 +146,13 @@ Before the link closes, on pause and on quit, every channel is released: once di
 
 - **`TELEMETRY_MIN_MTU := 77`** — Notifications need MTU 77 to carry the glove's 74-byte bundle.
 
-## HexRHaptics
+## Haptics
 
-*extends `RefCounted` · `addons/hexr/core/hexr_haptics.gd`*
+*extends `RefCounted` · `addons/hexr/core/haptics.gd`*
 
 Builds the glove's haptic command frames (port of the Unity package's HaptGlove.Haptics).
 
-Each glove owns one of these. The builders return bytes to send with `HexRGlove.bt_send()`; they also record the last command per channel, which the floating menu's readout and HexR Remote's haptics feed read back. That record is commanded intent: the glove does not acknowledge commands.
+Each glove owns one of these. The builders return bytes to send with `HaptGloveHandler.bt_send()`; they also record the last command per channel, which the floating menu's readout and HexR Remote's haptics feed read back. That record is commanded intent: the glove does not acknowledge commands.
 
 Intensity is 0.1..1 and maps linearly to 15..50 kPa. Speed is 0.1..1, the ramp rate. Out-of-range values are clamped, not rejected.
 
@@ -236,18 +236,18 @@ The glove sends three frames 50 times a second once notifications are on: finger
 
 *extends `Node3D` · `addons/hexr/hands/hexr_rig.gd`*
 
-The HexR rig for a scene: both [`HexRTrackedHand`](#hexrtrackedhand)s and both [`HexRPressureController`](#hexrpressurecontroller)s. Put it under your `XROrigin3D`. Missing parts are created when the scene runs, so an empty HexRRig node is a complete rig; Project > Tools > HexR > Create HexR Rig adds them as nodes you can see and tune.
+The HexR rig for a scene: both [`HexRTrackedHand`](#hexrtrackedhand)s and both [`PressureTrackerMain`](#pressuretrackermain)s. Put it under your `XROrigin3D`. Missing parts are created when the scene runs, so an empty HexRRig node is a complete rig; Project > Tools > HexR > Create HexR Rig adds them as nodes you can see and tune.
 
 ### Methods
 
 - **`find_hand(hand: int) -> HexRTrackedHand`**
-- **`find_controller(hand: int) -> HexRPressureController`**
+- **`find_controller(hand: int) -> PressureTrackerMain`**
 
 ## HexRTrackedHand
 
 *extends `Node3D` · `addons/hexr/hands/hexr_tracked_hand.gd`*
 
-One tracked hand: reads the OpenXR hand tracker and moves six [`HexRTouchPoint`](#hexrtouchpoint)s (five fingertips and the palm) with its joints, and tracks how curled each finger is.
+One tracked hand: reads the OpenXR hand tracker and moves six [`HapticFingerTrigger`](#hapticfingertrigger)s (five fingertips and the palm) with its joints, and tracks how curled each finger is.
 
 It reads `XRHandTracker` directly (the standard OpenXR joints), so it works on Meta Quest, PICO and any OpenXR runtime, with or without a hand mesh. Put it anywhere under the `XROrigin3D`; [`HexRRig`](#hexrrig) creates two.
 
@@ -268,15 +268,15 @@ It reads `XRHandTracker` directly (the standard OpenXR joints), so it works on M
 
 ### Properties
 
-- **`touch_points: Array[HexRTouchPoint] = []`** — The six touch points, indexed by `HexRTypes.Finger`.
-- **`finger_use := HexRFingerUseTracking.new()`**
+- **`touch_points: Array[HapticFingerTrigger] = []`** — The six touch points, indexed by `HexRTypes.Finger`.
+- **`finger_use := FingerUseTracking.new()`**
 - **`tracking := false`** — True while the tracker reports this hand.
 
 ### Methods
 
 - **`get_tracker_name() -> StringName`**
 - **`get_tracker() -> XRHandTracker`**
-- **`touch_point(finger: int) -> HexRTouchPoint`**
+- **`touch_point(finger: int) -> HapticFingerTrigger`**
 - **`get_joint_global_transform(joint: int) -> Transform3D`** — A joint's global transform this frame, or null-equivalent identity when it is not tracked. `joint` is an `XRHandTracker.HandJoint`.
 - **`is_joint_valid(joint: int) -> bool`**
 - **`update_from_tracker() -> void`** — Moves the touch points to the tracker's current joints. Called every physics frame.
@@ -286,15 +286,15 @@ It reads `XRHandTracker` directly (the standard OpenXR joints), so it works on M
 - **`KNUCKLE_JOINTS: Array[int] = …`** — Where each finger's curl is measured from (the thumb from its metacarpal).
 - **`DEFAULT_TIP_OFFSETS_LEFT: Array[Vector3] = …`** — Fingertip sphere centres in joint space (OpenXR: -Z toward the tip, -Y toward the palm): a few millimetres toward the pad and back from the tip. The Unity package's values for the same OpenXR joints, tuned on PICO, with Z flipped from Unity's left-handed axes.
 
-## HexRTouchPoint
+## HapticFingerTrigger
 
-*extends `Area3D` · `addons/hexr/hands/hexr_touch_point.gd`*
+*extends `Area3D` · `addons/hexr/hands/haptic_finger_trigger.gd`*
 
 A fingertip or the palm of a tracked hand (port of the Unity package's HapticFingerTrigger). [`HexRTrackedHand`](#hexrtrackedhand) creates six of them and moves them with the hand's joints. Zones and components find out which finger touched them from the touch point that entered them:
 
 ```gdscript
 func _on_area_entered(area: Area3D) -> void:
-    if area is HexRTouchPoint:
+    if area is HapticFingerTrigger:
         area.trigger_fix_pressure(0.6)
 ```
 
@@ -305,17 +305,17 @@ func _on_area_entered(area: Area3D) -> void:
 
 ### Methods
 
-- **`controller() -> HexRPressureController`**
-- **`glove() -> HexRGlove`**
+- **`controller() -> PressureTrackerMain`**
+- **`glove() -> HaptGloveHandler`**
 - **`is_palm() -> bool`**
 - **`trigger_fix_pressure(intensity: float) -> void`** — Presses this finger, skipping the hand-near check (the touch is the evidence).
 - **`trigger_vibration_pressure(frequency: float, intensity: float) -> void`** — Vibrates this finger. `frequency` 0.1..40 Hz.
 - **`remove_vibration() -> void`**
 - **`remove_haptics() -> void`**
 
-## HexRFingerUseTracking
+## FingerUseTracking
 
-*extends `RefCounted` · `addons/hexr/hands/hexr_finger_use_tracking.gd`*
+*extends `RefCounted` · `addons/hexr/hands/finger_use_tracking.gd`*
 
 How curled each finger is, from 0 (fully curled) to 1 (fully extended). Port of the Unity package's FingerUseTracking: each finger's tip-to-knuckle distance, normalised against the smallest and largest seen so far, so it calibrates itself as the wearer moves their hand. Reach it as `HexR.tracked_hand(hand).finger_use`.
 
@@ -338,13 +338,13 @@ How curled each finger is, from 0 (fully curled) to 1 (fully extended). Port of 
 
 # Haptics
 
-## HexRPressureController
+## PressureTrackerMain
 
-*extends `Node` · `addons/hexr/haptics/hexr_pressure_controller.gd`*
+*extends `Node` · `addons/hexr/haptics/pressure_tracker_main.gd`*
 
 A hand's "Pressure Controller" (port of the Unity package's PressureTrackerMain). Every haptic for that hand goes through here; a hand without one produces no haptics. Reach it as `HexR.controller(HexRTypes.Hand.LEFT)`.
 
-Calls other than the `remove_*` ones only fire while the hand is near something: grabbing, poke-hovering, or touching a [`HexRProximityCheck`](#hexrproximitycheck) (the "hand-near check"). Pass `bypass_hand_check` to the custom calls to skip it.
+Calls other than the `remove_*` ones only fire while the hand is near something: grabbing, poke-hovering, or touching a [`ProximityCheck`](#proximitycheck) (the "hand-near check"). Pass `bypass_hand_check` to the custom calls to skip it.
 
 Intensity is 0.1..1 (about 15..50 kPa). Components use a 10..60 strength scale; convert with `strength_to_intensity()`.
 
@@ -360,7 +360,7 @@ Intensity is 0.1..1 (about 15..50 kPa). Components use a 10..60 strength scale; 
 ### Methods
 
 - **`static strength_to_intensity(strength: float) -> float`** — Unity StrengthToIntensity: the 10..60 component scale to 0.1..1 intensity.
-- **`glove() -> HexRGlove`** — This hand's glove, or null.
+- **`glove() -> HaptGloveHandler`** — This hand's glove, or null.
 - **`tracked_hand() -> HexRTrackedHand`** — This hand's tracked hand (joints, touch points, finger curl), or null.
 - **`hand_grabbing_check(is_grabbing: bool) -> void`**
 - **`poke_hovering_check(is_hovering: bool) -> void`**
@@ -453,9 +453,9 @@ A button pressed by a fingertip, with no interaction toolkit needed. The pressin
 - **`is_pressed() -> bool`**
 - **`accepts(finger: int) -> bool`**
 
-## HexRSpecialHaptics
+## SpecialHaptics
 
-*extends `Area3D` · `addons/hexr/components/hexr_special_haptics.gd`*
+*extends `Area3D` · `addons/hexr/components/special_haptics.gd`*
 
 A zone with a ready-made haptic effect for the fingers inside it (port of the Unity package's SpecialHaptics). Effects skip the hand-near check: being in the zone is enough.
 
@@ -514,11 +514,11 @@ The Unity component only looked at the last finger it checked; this one needs ev
 
 - **`is_in_use() -> bool`**
 
-## HexRProximityCheck
+## ProximityCheck
 
-*extends `Area3D` · `addons/hexr/components/hexr_proximity_check.gd`*
+*extends `Area3D` · `addons/hexr/components/proximity_check.gd`*
 
-Marks a hand as "near" while any of its touch points is inside this area, which opens the hand-near check on that hand's [`HexRPressureController`](#hexrpressurecontroller). Use it around objects whose haptics come from code or from an interaction toolkit that does not report grabs itself. Size the collision shape to the space a hand has to be in.
+Marks a hand as "near" while any of its touch points is inside this area, which opens the hand-near check on that hand's [`PressureTrackerMain`](#pressuretrackermain). Use it around objects whose haptics come from code or from an interaction toolkit that does not report grabs itself. Size the collision shape to the space a hand has to be in.
 
 ### Inspector properties
 

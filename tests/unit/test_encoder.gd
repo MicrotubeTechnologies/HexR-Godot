@@ -6,7 +6,7 @@ const F := HexRTypes.Finger
 
 
 func test_reference_frames() -> void:
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	assert_bytes(h.hexr_pressure(F.INDEX, true, 1.0, 1.0),
 			"12 04 09 00000000 01 01 01 00 09 00004842 01 64", "Companion reference: Index full")
 	assert_bytes(h.hexr_pressure(F.INDEX, true, 0.8, 1.0),
@@ -17,8 +17,8 @@ func test_reference_frames() -> void:
 			"12 07 09 00 00 80 3f 01 05 01 02 09 00 00 70 41 01 32", "Palm vibration release")
 	assert_bytes(h.hexr_vibration(F.INDEX, true, 18.0, 0.8),
 			"12 07 09 00 00 90 41 01 01 01 00 09 00 00 48 42 01 2b", "Index vibration 18 Hz 0.8")
-	assert_bytes(HexRHaptics.pump_control(true), "06 02 01 01 01 50", "pump start")
-	assert_bytes(HexRHaptics.pump_control(false), "06 02 01 00 01 00", "pump stop")
+	assert_bytes(Haptics.pump_control(true), "06 02 01 01 01 50", "pump start")
+	assert_bytes(Haptics.pump_control(false), "06 02 01 00 01 00", "pump stop")
 
 
 func test_golden_sweep() -> void:
@@ -28,7 +28,7 @@ func test_golden_sweep() -> void:
 	var mismatches := 0
 	for c in cases:
 		var a: Array = c["args"]
-		var h := HexRHaptics.new()
+		var h := Haptics.new()
 		var got := PackedByteArray()
 		match c["kind"]:
 			"pressure":
@@ -42,7 +42,7 @@ func test_golden_sweep() -> void:
 			"pulse_ramped":
 				got = h.hexr_pulse_ramped(int(a[0]), a[1], a[2], a[3], a[4], a[5], int(a[6]), a[7])
 			"pump":
-				got = HexRHaptics.pump_control(a[0], int(a[1]))
+				got = Haptics.pump_control(a[0], int(a[1]))
 			"release":
 				var fingers: Array = []
 				for x in a[0]:
@@ -59,7 +59,7 @@ func test_golden_sweep() -> void:
 
 
 func test_release_all_matches_unity_layout() -> void:
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	var rel := h.build_release()
 	assert_eq(rel.size(), 216, "release-all length")
 	var frames := HexRFrames.split_frames(rel)
@@ -71,7 +71,7 @@ func test_release_all_matches_unity_layout() -> void:
 
 
 func test_pressure_clamps() -> void:
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	assert_eq(h.hexr_pressure(F.THUMB, true, 5.0, 5.0), h.hexr_pressure(F.THUMB, true, 1.0, 1.0), "upper clamp")
 	assert_eq(h.hexr_pressure(F.THUMB, true, -1.0, 0.0), h.hexr_pressure(F.THUMB, true, 0.1, 0.1), "lower clamp")
 	# Speed 0.1 is byte 10, speed 1 is byte 100.
@@ -81,12 +81,12 @@ func test_pressure_clamps() -> void:
 
 func test_float32_speed_bytes() -> void:
 	# The case that motivated HexRF32: 0.23 truncates to 22 in float32 (23 in float64).
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	assert_eq(h.hexr_pressure(F.INDEX, true, 0.5, 0.23)[17], 22, "speed 0.23")
 
 
 func test_layouts_of_long_frames() -> void:
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	var pulse := h.hexr_pulse(F.RING, true, 12.0, 0.6, 250)
 	assert_eq(pulse.size(), 21, "0x08 length")
 	assert_eq(pulse[0], 21, "0x08 length byte")
@@ -96,11 +96,11 @@ func test_layouts_of_long_frames() -> void:
 	assert_eq(h.hexr_pulse(F.RING, true, 12.0, 0.6, 5000).decode_u16(19), 1000, "pulse count clamp")
 	assert_eq(h.hexr_vibration_ramped(F.PALM, true, 1.0, 0.5, 0.5, 0.5, 0.0).size(), 25, "0x09 length")
 	assert_eq(h.hexr_pulse_ramped(F.PALM, true, 1.0, 0.5, 0.5, 0.5, 3, 0.0).size(), 28, "0x0A length")
-	assert_eq(HexRHaptics.set_pid(1.0, 0.5, 0.1).size(), 17, "0x05 length")
+	assert_eq(Haptics.set_pid(1.0, 0.5, 0.1).size(), 17, "0x05 length")
 
 
 func test_multi_concatenates() -> void:
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	var multi := h.hexr_pressure_multi([F.THUMB, F.INDEX], [true, true], [0.5, 0.6], [1.0, 1.0])
 	var single := h.hexr_pressure(F.THUMB, true, 0.5, 1.0)
 	single.append_array(h.hexr_pressure(F.INDEX, true, 0.6, 1.0))
@@ -108,7 +108,7 @@ func test_multi_concatenates() -> void:
 
 
 func test_channel_log() -> void:
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	assert_eq(h.get_channel_state(F.INDEX).mode, HexRTypes.HapticMode.OFF, "starts off")
 	h.hexr_pressure(F.INDEX, true, 0.8, 1.0)
 	var s := h.get_channel_state(F.INDEX)

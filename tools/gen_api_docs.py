@@ -20,11 +20,11 @@ OUT = ROOT / "docs" / "API.md"
 
 # The classes a game uses, in reading order. Everything else is listed under "Internals".
 SECTIONS = [
-    ("Gloves and connection", ["HexRManager", "HexRGlove", "HexRHaptics", "HexRTypes", "HexRFrameDecoder"]),
-    ("Hands", ["HexRRig", "HexRTrackedHand", "HexRTouchPoint", "HexRFingerUseTracking"]),
-    ("Haptics", ["HexRPressureController"]),
-    ("Scene nodes", ["HexRGrabbable", "HexRPhysicalButton", "HexRSpecialHaptics", "HexRUsable",
-                     "HexRProximityCheck", "HexRInteractableHaptics", "HexRXRToolsBinding"]),
+    ("Gloves and connection", ["HexRManager", "HaptGloveHandler", "Haptics", "HexRTypes", "HexRFrameDecoder"]),
+    ("Hands", ["HexRRig", "HexRTrackedHand", "HapticFingerTrigger", "FingerUseTracking"]),
+    ("Haptics", ["PressureTrackerMain"]),
+    ("Scene nodes", ["HexRGrabbable", "HexRPhysicalButton", "SpecialHaptics", "HexRUsable",
+                     "ProximityCheck", "HexRInteractableHaptics", "HexRXRToolsBinding"]),
     ("Menu and HexR Remote", ["HexRFloatingMenu", "HexRRemote"]),
 ]
 AUTOLOADS = {"HexRManager": "HexR"}

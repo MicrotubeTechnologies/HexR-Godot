@@ -1,4 +1,4 @@
-class_name HexRSpecialHaptics
+class_name SpecialHaptics
 extends Area3D
 ## A zone with a ready-made haptic effect for the fingers inside it (port of the Unity
 ## package's SpecialHaptics). Effects skip the hand-near check: being in the zone is enough.
@@ -72,11 +72,11 @@ func toggle_heart_regularity() -> void:
 	heart_beat = HeartBeat.REGULAR if heart_beat == HeartBeat.IRREGULAR else HeartBeat.IRREGULAR
 
 
-## Touching fingers per hand: [hand][finger] -> HexRTouchPoint or null.
+## Touching fingers per hand: [hand][finger] -> HapticFingerTrigger or null.
 func _touching() -> Array:
 	var out := [[null, null, null, null, null, null], [null, null, null, null, null, null]]
 	for area in get_overlapping_areas():
-		if area is HexRTouchPoint:
+		if area is HapticFingerTrigger:
 			out[area.hand][area.finger] = area
 	return out
 
@@ -131,9 +131,9 @@ func _send_vibration(hand: int, on: Array, frequency: float, intensity: float) -
 # -- custom haptics -------------------------------------------------------------------------
 
 func _on_area_entered(area: Area3D) -> void:
-	if not (area is HexRTouchPoint):
+	if not (area is HapticFingerTrigger):
 		return
-	var tp := area as HexRTouchPoint
+	var tp := area as HapticFingerTrigger
 	match effect:
 		Effect.CUSTOM_HAPTICS:
 			_pending_removal.erase(tp)
@@ -150,18 +150,18 @@ func _on_area_entered(area: Area3D) -> void:
 
 
 func _on_area_exited(area: Area3D) -> void:
-	if area is HexRTouchPoint and effect == Effect.CUSTOM_HAPTICS and _pressed_points.has(area):
+	if area is HapticFingerTrigger and effect == Effect.CUSTOM_HAPTICS and _pressed_points.has(area):
 		_pending_removal[area] = _clock + 0.1
 
 
-func _press_point(tp: HexRTouchPoint) -> void:
-	tp.trigger_fix_pressure(HexRPressureController.strength_to_intensity(haptic_pressure))
+func _press_point(tp: HapticFingerTrigger) -> void:
+	tp.trigger_fix_pressure(PressureTrackerMain.strength_to_intensity(haptic_pressure))
 	_pressed_points[tp] = true
 	_applied[tp.hand][tp.finger] = true
 
 
 func _tick_custom_haptics() -> void:
-	for tp: HexRTouchPoint in _pending_removal.keys():
+	for tp: HapticFingerTrigger in _pending_removal.keys():
 		if _clock < _pending_removal[tp]:
 			continue
 		_pending_removal.erase(tp)
@@ -170,7 +170,7 @@ func _tick_custom_haptics() -> void:
 			_pressed_points.erase(tp)
 			_applied[tp.hand][tp.finger] = false
 	# Re-press a touching finger if something else released it meanwhile.
-	for tp: HexRTouchPoint in _pressed_points.keys():
+	for tp: HapticFingerTrigger in _pressed_points.keys():
 		if not is_instance_valid(tp):
 			_pressed_points.erase(tp)
 			continue
@@ -284,11 +284,11 @@ func _any_applied(hand: int) -> bool:
 	return false
 
 
-func _glove(hand: int) -> HexRGlove:
+func _glove(hand: int) -> HaptGloveHandler:
 	var hub := HexRManager.get_instance()
 	return hub.glove(hand) if hub else null
 
 
-func _controller(hand: int) -> HexRPressureController:
+func _controller(hand: int) -> PressureTrackerMain:
 	var hub := HexRManager.get_instance()
 	return hub.controller(hand) if hub else null

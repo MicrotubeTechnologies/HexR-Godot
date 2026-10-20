@@ -106,7 +106,7 @@ func _create_rig() -> void:
 		var h := HexRTrackedHand.new()
 		h.name = side + "Hand"
 		h.hand = hand
-		var c := HexRPressureController.new()
+		var c := PressureTrackerMain.new()
 		c.name = side + "PressureController"
 		c.hand = hand
 		for n in [h, c]:

@@ -1,4 +1,4 @@
-class_name HexRFingerUseTracking
+class_name FingerUseTracking
 extends RefCounted
 ## How curled each finger is, from 0 (fully curled) to 1 (fully extended). Port of the Unity
 ## package's FingerUseTracking: each finger's tip-to-knuckle distance, normalised against the

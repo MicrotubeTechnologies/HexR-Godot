@@ -146,7 +146,7 @@ func test_physical_button_ignores_other_fingers() -> void:
 
 func test_proximity_opens_hand_near_check() -> void:
 	var c := hub.controller(H.LEFT)
-	var zone := HexRProximityCheck.new()
+	var zone := ProximityCheck.new()
 	zone.clear_delay = 0.05
 	_zone_at(zone, _tip(F.MIDDLE), 0.05)
 	await wait_physics(3)
@@ -162,8 +162,8 @@ func test_proximity_opens_hand_near_check() -> void:
 
 
 func test_special_haptics_fountain_vibrates_and_stops() -> void:
-	var zone := HexRSpecialHaptics.new()
-	zone.effect = HexRSpecialHaptics.Effect.FOUNTAIN
+	var zone := SpecialHaptics.new()
+	zone.effect = SpecialHaptics.Effect.FOUNTAIN
 	_zone_at(zone, _tip(F.INDEX), 0.015)
 	await wait_physics(30)
 	assert_true(lg.vibrating[F.INDEX], "index vibrating in the fountain")
@@ -175,8 +175,8 @@ func test_special_haptics_fountain_vibrates_and_stops() -> void:
 
 
 func test_special_haptics_custom_presses_and_releases() -> void:
-	var zone := HexRSpecialHaptics.new()
-	zone.effect = HexRSpecialHaptics.Effect.CUSTOM_HAPTICS
+	var zone := SpecialHaptics.new()
+	zone.effect = SpecialHaptics.Effect.CUSTOM_HAPTICS
 	zone.haptic_pressure = 40.0
 	_zone_at(zone, _tip(F.RING), 0.012)
 	await wait_physics(4)
@@ -187,8 +187,8 @@ func test_special_haptics_custom_presses_and_releases() -> void:
 
 
 func test_zone_releases_on_removal() -> void:
-	var zone := HexRSpecialHaptics.new()
-	zone.effect = HexRSpecialHaptics.Effect.CUSTOM_VIBRATIONS
+	var zone := SpecialHaptics.new()
+	zone.effect = SpecialHaptics.Effect.CUSTOM_VIBRATIONS
 	zone.vibration_frequency = 25.0
 	_zone_at(zone, _tip(F.INDEX), 0.015)
 	await wait_physics(20)
@@ -273,8 +273,8 @@ func test_interactable_haptics_follows_state() -> void:
 
 
 func test_strength_scale() -> void:
-	assert_almost(HexRPressureController.strength_to_intensity(10), 0.1, 1e-6, "10 is lightest")
-	assert_almost(HexRPressureController.strength_to_intensity(60), 1.0, 1e-6, "60 is firmest")
-	assert_almost(HexRPressureController.strength_to_intensity(35), 0.55, 1e-6, "midpoint")
-	assert_almost(HexRPressureController.strength_to_intensity(0), 0.1, 1e-6, "clamped low")
-	assert_almost(HexRPressureController.strength_to_intensity(90), 1.0, 1e-6, "clamped high")
+	assert_almost(PressureTrackerMain.strength_to_intensity(10), 0.1, 1e-6, "10 is lightest")
+	assert_almost(PressureTrackerMain.strength_to_intensity(60), 1.0, 1e-6, "60 is firmest")
+	assert_almost(PressureTrackerMain.strength_to_intensity(35), 0.55, 1e-6, "midpoint")
+	assert_almost(PressureTrackerMain.strength_to_intensity(0), 0.1, 1e-6, "clamped low")
+	assert_almost(PressureTrackerMain.strength_to_intensity(90), 1.0, 1e-6, "clamped high")

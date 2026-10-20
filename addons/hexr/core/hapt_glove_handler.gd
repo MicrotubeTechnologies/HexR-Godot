@@ -1,4 +1,4 @@
-class_name HexRGlove
+class_name HaptGloveHandler
 extends Node
 ## One glove: its Bluetooth connection, the commands sent to it and the readings it sends back.
 ## Port of the Unity package's HaptGloveHandler. Reach them as [code]HexR.left[/code] and
@@ -38,7 +38,7 @@ const TELEMETRY_MIN_MTU := 77
 ## Which hand this glove is.
 var hand: int = HexRTypes.Hand.LEFT
 ## Builds the commands and records the last one per channel.
-var haptics := HexRHaptics.new()
+var haptics := Haptics.new()
 ## The glove's latest readings.
 var decoder := HexRFrameDecoder.new()
 ## Batches commands into at most one write per interval.
@@ -395,7 +395,7 @@ func _check_battery() -> void:
 
 # -- commands -------------------------------------------------------------------------------
 
-## Sends frames built by [member haptics] (or [HexRHaptics] directly). Queued and batched
+## Sends frames built by [member haptics] (or [Haptics] directly). Queued and batched
 ## where the platform needs it. Dropped while disconnected: a command for a grab that is over
 ## is better lost than delivered late.
 func bt_send(data: PackedByteArray) -> bool:
@@ -427,7 +427,7 @@ func air_pressure_source_control() -> void:
 	if not _pump_started:
 		_start_pump()
 	else:
-		bt_send(HexRHaptics.pump_control(false))
+		bt_send(Haptics.pump_control(false))
 		_pump_started = false
 		pump_changed.emit(false)
 
@@ -435,7 +435,7 @@ func air_pressure_source_control() -> void:
 func _start_pump() -> void:
 	if _pump_started:
 		return
-	bt_send(HexRHaptics.pump_control(true, source_pressure))
+	bt_send(Haptics.pump_control(true, source_pressure))
 	_pump_started = true
 	pump_changed.emit(true)
 	var pct := get_battery_level()
@@ -455,7 +455,7 @@ func _update_pause_frame() -> void:
 	if _transport == null or not ble_connected:
 		return
 	if _release_bytes.is_empty():
-		_release_bytes = HexRHaptics.new().build_release()
+		_release_bytes = Haptics.new().build_release()
 	_transport.set_pause_release_frame(device_id, _release_bytes if release_when_paused else PackedByteArray())
 
 

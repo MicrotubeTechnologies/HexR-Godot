@@ -61,8 +61,8 @@ HexR.left.release_all_channels()
 | `HexRRig` | Under your `XROrigin3D`: tracked hands with touch points, and both Pressure Controllers |
 | `HexRGrabbable` | Pinch or palm grab of a `RigidBody3D`, each touching finger pressed |
 | `HexRPhysicalButton` | A button pressed by a fingertip |
-| `HexRSpecialHaptics` | Zones: custom vibration or pressure, fountain, rain drop, heart beat, hand squeeze |
-| `HexRProximityCheck`, `HexRUsable` | Hand-near check for code-driven haptics; curl-to-use |
+| `SpecialHaptics` | Zones: custom vibration or pressure, fountain, rain drop, heart beat, hand squeeze |
+| `ProximityCheck`, `HexRUsable` | Hand-near check for code-driven haptics; curl-to-use |
 | `HexRInteractableHaptics` | Pressure while a Godot XR Tools pickable is held |
 | `HexRFloatingMenu` | Connect, battery and a live haptics readout, pressed with a fingertip |
 | `HexRRemote` | The HexR Companion's link: status, gloves, scenes, commands, view and sound |

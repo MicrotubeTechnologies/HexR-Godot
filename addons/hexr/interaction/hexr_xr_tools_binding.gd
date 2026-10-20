@@ -77,7 +77,7 @@ func _hand_of_holder() -> int:
 	return -1
 
 
-func _controller(hand: int) -> HexRPressureController:
+func _controller(hand: int) -> PressureTrackerMain:
 	if hand < 0:
 		return null
 	var hub := HexRManager.get_instance()

@@ -31,7 +31,7 @@ func is_in_use() -> bool:
 func _physics_process(_delta: float) -> void:
 	if not _in_use:
 		for area in get_overlapping_areas():
-			if area is HexRTouchPoint:
+			if area is HapticFingerTrigger:
 				_hand = area.hand
 				break
 	if _hand < 0:
@@ -49,7 +49,7 @@ func _physics_process(_delta: float) -> void:
 		_hand = -1
 
 
-func _all_needed(use: HexRFingerUseTracking, test: Callable) -> bool:
+func _all_needed(use: FingerUseTracking, test: Callable) -> bool:
 	var any := false
 	for f in 5:
 		if fingers & (1 << f):

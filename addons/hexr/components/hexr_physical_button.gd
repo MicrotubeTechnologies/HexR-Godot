@@ -21,7 +21,7 @@ signal released
 ## chatter the button.
 @export var rearm_seconds := 0.2
 
-var _presser: HexRTouchPoint
+var _presser: HapticFingerTrigger
 var _cap_rest := Vector3.ZERO
 var _cap_moved := false
 var _rearm_at := 0.0
@@ -48,9 +48,9 @@ func accepts(finger: int) -> bool:
 
 func _on_area_entered(area: Area3D) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
-	if _presser != null or now < _rearm_at or not (area is HexRTouchPoint):
+	if _presser != null or now < _rearm_at or not (area is HapticFingerTrigger):
 		return
-	var tp := area as HexRTouchPoint
+	var tp := area as HapticFingerTrigger
 	if not accepts(tp.finger):
 		return
 	_presser = tp
@@ -61,7 +61,7 @@ func _on_area_entered(area: Area3D) -> void:
 		_cap_moved = true
 	pressed.emit()
 	if press_pressure > 0.0:
-		tp.trigger_fix_pressure(HexRPressureController.strength_to_intensity(press_pressure))
+		tp.trigger_fix_pressure(PressureTrackerMain.strength_to_intensity(press_pressure))
 
 
 func _on_area_exited(area: Area3D) -> void:

@@ -8,7 +8,7 @@ extends RefCounted
 const FINGERS := 6
 
 var _clock: Callable  # () -> int microseconds
-var _last: Array = [[], []]  # [hand][finger] -> HexRHaptics.ChannelState
+var _last: Array = [[], []]  # [hand][finger] -> Haptics.ChannelState
 var _count: Array = [PackedInt32Array([0, 0, 0, 0, 0, 0]), PackedInt32Array([0, 0, 0, 0, 0, 0])]
 var _watched: Array = [null, null]
 
@@ -17,22 +17,22 @@ func _init(clock: Callable) -> void:
 	_clock = clock
 	for h in 2:
 		for f in FINGERS:
-			_last[h].append(HexRHaptics.ChannelState.new())
+			_last[h].append(Haptics.ChannelState.new())
 
 
 ## Appends a line for each hand whose channels changed since the last poll.
 func poll(hub: HexRManager, lines: Array) -> void:
 	var now := -1
 	for h in 2:
-		var g: HexRGlove = hub.glove(h) if hub else null
-		var haptics: HexRHaptics = g.haptics if g else null
+		var g: HaptGloveHandler = hub.glove(h) if hub else null
+		var haptics: Haptics = g.haptics if g else null
 		var changed := []
 		if g != _watched[h]:
 			# A different glove (or none): whatever was on is off as far as a viewer knows.
 			for f in FINGERS:
 				if _last[h][f].is_on():
-					changed.append(_channel(f, HexRHaptics.ChannelState.new(), false))
-				_last[h][f] = HexRHaptics.ChannelState.new()
+					changed.append(_channel(f, Haptics.ChannelState.new(), false))
+				_last[h][f] = Haptics.ChannelState.new()
 				_count[h][f] = haptics.get_activation_count(f) if haptics else 0
 			_watched[h] = g
 		if haptics:
@@ -70,7 +70,7 @@ static func _line(hand: int, t: int, channels: Array) -> String:
 	return HexRRemoteProtocol.to_line(HexRRemoteProtocol.haptics_message(t, HexRRemoteProtocol.hand_name(hand), channels))
 
 
-static func _channel(finger: int, state: HexRHaptics.ChannelState, tap: bool) -> Dictionary:
+static func _channel(finger: int, state: Haptics.ChannelState, tap: bool) -> Dictionary:
 	if not state.is_on():
 		return HexRRemoteProtocol.haptic_channel(finger)
 	var intensity := state.intensity

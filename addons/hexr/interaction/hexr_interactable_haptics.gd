@@ -149,7 +149,7 @@ func _push(hand: int, pressure: float) -> void:
 	if stepped <= 0.0:
 		_remove_all(hand)
 		return
-	var intensity := HexRPressureController.strength_to_intensity(stepped)
+	var intensity := PressureTrackerMain.strength_to_intensity(stepped)
 	if thumb:
 		c.single_thumb_haptic(intensity)
 	if index:
@@ -182,6 +182,6 @@ func _remove_all(hand: int) -> void:
 		c.remove_palm_haptics()
 
 
-func _controller(hand: int) -> HexRPressureController:
+func _controller(hand: int) -> PressureTrackerMain:
 	var hub := HexRManager.get_instance()
 	return hub.controller(hand) if hub else null

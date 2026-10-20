@@ -35,11 +35,11 @@ const PROTOCOL_VERSION := "0.10.5"
 
 var transport: HexRBleTransport
 var device_store: HexRDeviceStore
-var left: HexRGlove
-var right: HexRGlove
+var left: HaptGloveHandler
+var right: HaptGloveHandler
 ## The scene's Pressure Controllers, set when they enter the tree.
-var left_controller: HexRPressureController
-var right_controller: HexRPressureController
+var left_controller: PressureTrackerMain
+var right_controller: PressureTrackerMain
 ## The scene's tracked hands, set when they enter the tree.
 var left_hand: HexRTrackedHand
 var right_hand: HexRTrackedHand
@@ -48,8 +48,8 @@ var drive_from_process := true
 
 static var _instance: HexRManager
 
-var _scan_waiters: Array[HexRGlove] = []
-var _permission_waiters: Array[HexRGlove] = []
+var _scan_waiters: Array[HaptGloveHandler] = []
+var _permission_waiters: Array[HaptGloveHandler] = []
 var _awaiting_permission := false
 
 
@@ -141,8 +141,8 @@ func setup(p_transport: HexRBleTransport, store: HexRDeviceStore) -> void:
 	transport.permissions_result.connect(_on_permissions_result)
 
 
-func _make_glove(hand: int) -> HexRGlove:
-	var g := HexRGlove.new()
+func _make_glove(hand: int) -> HaptGloveHandler:
+	var g := HaptGloveHandler.new()
 	g.hand = hand
 	add_child(g)
 	g.bluetooth_connected.connect(func() -> void: glove_connected.emit(hand))
@@ -182,7 +182,7 @@ func tick(now_ms: int) -> void:
 
 # -- connecting -----------------------------------------------------------------------------
 
-func glove(hand: int) -> HexRGlove:
+func glove(hand: int) -> HaptGloveHandler:
 	return left if hand == HexRTypes.Hand.LEFT else right
 
 
@@ -227,7 +227,7 @@ func is_hand_connecting(hand: int) -> bool:
 	return _permission_waiters.has(g) or g.is_connecting()
 
 
-func _begin(g: HexRGlove) -> void:
+func _begin(g: HaptGloveHandler) -> void:
 	if not transport.is_available():
 		g._unavailable(transport.get_unavailable_reason())
 		return
@@ -246,7 +246,7 @@ func _on_permissions_result(granted: bool) -> void:
 	_awaiting_permission = false
 	var waiters := _permission_waiters.duplicate()
 	_permission_waiters.clear()
-	for g: HexRGlove in waiters:
+	for g: HaptGloveHandler in waiters:
 		if granted:
 			g.connect_toggle()
 		else:
@@ -255,14 +255,14 @@ func _on_permissions_result(granted: bool) -> void:
 
 # -- scanning (one scan serves both hands) --------------------------------------------------
 
-func _request_scan(g: HexRGlove) -> void:
+func _request_scan(g: HaptGloveHandler) -> void:
 	if not _scan_waiters.has(g):
 		_scan_waiters.append(g)
 	if not transport.is_scanning():
-		transport.start_scan(HexRGlove.SCAN_TIMEOUT_MS)
+		transport.start_scan(HaptGloveHandler.SCAN_TIMEOUT_MS)
 
 
-func _cancel_scan(g: HexRGlove) -> void:
+func _cancel_scan(g: HaptGloveHandler) -> void:
 	_scan_waiters.erase(g)
 	if _scan_waiters.is_empty() and transport.is_scanning():
 		transport.stop_scan()
@@ -273,7 +273,7 @@ func _on_device_found(id: String, device_name: String, rssi: int) -> void:
 	for g in [left, right]:
 		if HexRTypes.hand_from_device_name(device_name) == g.hand:
 			g.device_found.emit(id, device_name)
-	for g: HexRGlove in _scan_waiters.duplicate():
+	for g: HaptGloveHandler in _scan_waiters.duplicate():
 		if g._offer_device(id, device_name):
 			_scan_waiters.erase(g)
 	if _scan_waiters.is_empty() and transport.is_scanning():
@@ -283,13 +283,13 @@ func _on_device_found(id: String, device_name: String, rssi: int) -> void:
 func _on_scan_finished(error: String) -> void:
 	var waiters := _scan_waiters.duplicate()
 	_scan_waiters.clear()
-	for g: HexRGlove in waiters:
+	for g: HaptGloveHandler in waiters:
 		g._on_scan_ended(error)
 
 
 # -- transport events -----------------------------------------------------------------------
 
-func _glove_for_id(id: String) -> HexRGlove:
+func _glove_for_id(id: String) -> HaptGloveHandler:
 	if left._owns(id):
 		return left
 	if right._owns(id):
@@ -327,7 +327,7 @@ func _on_notified(id: String, data: PackedByteArray) -> void:
 # -- Pressure Controllers -------------------------------------------------------------------
 
 ## The Pressure Controller for [param hand], or null if the scene has none.
-func controller(hand: int) -> HexRPressureController:
+func controller(hand: int) -> PressureTrackerMain:
 	return left_controller if hand == HexRTypes.Hand.LEFT else right_controller
 
 
@@ -337,7 +337,7 @@ func tracked_hand(hand: int) -> HexRTrackedHand:
 
 
 ## How curled each finger of [param hand] is, or null without a tracked hand.
-func finger_use(hand: int) -> HexRFingerUseTracking:
+func finger_use(hand: int) -> FingerUseTracking:
 	var h := tracked_hand(hand)
 	return h.finger_use if h else null
 
@@ -356,7 +356,7 @@ func _unregister_hand(h: HexRTrackedHand) -> void:
 		right_hand = null
 
 
-func _register_controller(c: HexRPressureController, hand: int) -> void:
+func _register_controller(c: PressureTrackerMain, hand: int) -> void:
 	if hand == HexRTypes.Hand.LEFT:
 		left_controller = c
 	else:

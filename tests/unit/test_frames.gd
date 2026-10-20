@@ -14,7 +14,7 @@ func test_shared_fixture() -> void:
 
 
 func test_never_splits_a_frame() -> void:
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	var rel := h.build_release()
 	for chunk in HexRFrames.chunk_for_mtu(rel, 20):
 		assert_eq(chunk.size(), 18, "one release frame per write at MTU 23")
@@ -26,7 +26,7 @@ func test_never_splits_a_frame() -> void:
 
 
 func test_split_stops_at_bad_length() -> void:
-	var h := HexRHaptics.new()
+	var h := Haptics.new()
 	var data := h.hexr_pressure(1, true, 0.5, 0.5)
 	data.append_array(PackedByteArray([0x40, 0x04]))
 	assert_eq(HexRFrames.split_frames(data).size(), 1, "stops at impossible length")

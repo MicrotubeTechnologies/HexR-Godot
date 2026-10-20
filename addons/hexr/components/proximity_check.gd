@@ -1,7 +1,7 @@
-class_name HexRProximityCheck
+class_name ProximityCheck
 extends Area3D
 ## Marks a hand as "near" while any of its touch points is inside this area, which opens the
-## hand-near check on that hand's [HexRPressureController]. Use it around objects whose haptics
+## hand-near check on that hand's [PressureTrackerMain]. Use it around objects whose haptics
 ## come from code or from an interaction toolkit that does not report grabs itself.
 ## Size the collision shape to the space a hand has to be in.
 
@@ -22,7 +22,7 @@ func _physics_process(_delta: float) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
 	var touching: Array[bool] = [false, false]
 	for area in get_overlapping_areas():
-		if area is HexRTouchPoint:
+		if area is HapticFingerTrigger:
 			touching[area.hand] = true
 			_last_contact[area.hand] = now
 	for hand in 2:

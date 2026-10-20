@@ -45,7 +45,7 @@ static func scene_checks(root: Node) -> Array:
 	var has_rig := not rigs.is_empty() or _has_instance_with(root, "HexRRig")
 	out.append(_check(has_rig, "HexR rig", "Project > Tools > HexR > Create HexR Rig.", Callable()))
 	var zones := 0
-	for cls in ["HexRSpecialHaptics", "HexRGrabbable", "HexRPhysicalButton", "HexRProximityCheck", "HexRUsable"]:
+	for cls in ["SpecialHaptics", "HexRGrabbable", "HexRPhysicalButton", "ProximityCheck", "HexRUsable"]:
 		for z in root.find_children("*", cls, true, false):
 			zones += 1
 			var a := z as Area3D

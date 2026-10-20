@@ -27,7 +27,7 @@ enum GrabType { PINCH, PALM }
 @export var lost_contact_grace := 0.2
 
 var _grab_hand := -1
-var _anchor: HexRTouchPoint
+var _anchor: HapticFingerTrigger
 var _offset := Transform3D()
 var _grabbed_at := 0.0
 var _anchor_lost_at := -1.0
@@ -65,7 +65,7 @@ func _physics_process(delta: float) -> void:
 	_clock += delta
 	var touching := [[null, null, null, null, null, null], [null, null, null, null, null, null]]
 	for area in get_overlapping_areas():
-		if area is HexRTouchPoint:
+		if area is HapticFingerTrigger:
 			touching[area.hand][area.finger] = area
 	var anchor_finger := _anchor_finger()
 
@@ -99,7 +99,7 @@ func _another_finger(row: Array) -> bool:
 			or row[HexRTypes.Finger.RING] != null or row[HexRTypes.Finger.PINKY] != null
 
 
-func _grab(hand: int, anchor: HexRTouchPoint) -> void:
+func _grab(hand: int, anchor: HapticFingerTrigger) -> void:
 	if target == null:
 		return
 	_grab_hand = hand
@@ -134,7 +134,7 @@ func _update_finger_haptics(row: Array) -> void:
 	var g := _glove(_grab_hand)
 	if g == null:
 		return
-	var intensity := HexRPressureController.strength_to_intensity(haptic_strength)
+	var intensity := PressureTrackerMain.strength_to_intensity(haptic_strength)
 	var out := PackedByteArray()
 	for f in 6:
 		var touching: bool = row[f] != null
@@ -178,16 +178,16 @@ func _exit_tree() -> void:
 		_let_go()
 
 
-func _finger_use(hand: int) -> HexRFingerUseTracking:
+func _finger_use(hand: int) -> FingerUseTracking:
 	var hub := HexRManager.get_instance()
 	return hub.finger_use(hand) if hub else null
 
 
-func _glove(hand: int) -> HexRGlove:
+func _glove(hand: int) -> HaptGloveHandler:
 	var hub := HexRManager.get_instance()
 	return hub.glove(hand) if hub else null
 
 
-func _controller(hand: int) -> HexRPressureController:
+func _controller(hand: int) -> PressureTrackerMain:
 	var hub := HexRManager.get_instance()
 	return hub.controller(hand) if hub else null

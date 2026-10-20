@@ -1,6 +1,6 @@
 class_name HexRTrackedHand
 extends Node3D
-## One tracked hand: reads the OpenXR hand tracker and moves six [HexRTouchPoint]s (five
+## One tracked hand: reads the OpenXR hand tracker and moves six [HapticFingerTrigger]s (five
 ## fingertips and the palm) with its joints, and tracks how curled each finger is.
 ##
 ## It reads [XRHandTracker] directly (the standard OpenXR joints), so it works on Meta Quest,
@@ -53,8 +53,8 @@ const DEFAULT_TIP_OFFSETS_RIGHT: Array[Vector3] = [
 		_update_debug_meshes()
 
 ## The six touch points, indexed by [enum HexRTypes.Finger].
-var touch_points: Array[HexRTouchPoint] = []
-var finger_use := HexRFingerUseTracking.new()
+var touch_points: Array[HapticFingerTrigger] = []
+var finger_use := FingerUseTracking.new()
 ## True while the tracker reports this hand.
 var tracking := false
 
@@ -84,7 +84,7 @@ func get_tracker() -> XRHandTracker:
 	return XRServer.get_tracker(get_tracker_name()) as XRHandTracker
 
 
-func touch_point(finger: int) -> HexRTouchPoint:
+func touch_point(finger: int) -> HapticFingerTrigger:
 	return touch_points[finger] if finger >= 0 and finger < touch_points.size() else null
 
 
@@ -103,7 +103,7 @@ func _build_touch_points() -> void:
 		return
 	var offsets := tip_offsets if tip_offsets.size() == 5 else (DEFAULT_TIP_OFFSETS_LEFT if hand == HexRTypes.Hand.LEFT else DEFAULT_TIP_OFFSETS_RIGHT)
 	for f in 6:
-		var tp := HexRTouchPoint.new()
+		var tp := HapticFingerTrigger.new()
 		tp.hand = hand
 		tp.finger = f
 		tp.name = "%s%s" % [HexRTypes.hand_name(hand), HexRTypes.finger_name(f)]

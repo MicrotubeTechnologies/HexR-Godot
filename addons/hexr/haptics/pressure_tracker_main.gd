@@ -1,11 +1,11 @@
-class_name HexRPressureController
+class_name PressureTrackerMain
 extends Node
 ## A hand's "Pressure Controller" (port of the Unity package's PressureTrackerMain). Every
 ## haptic for that hand goes through here; a hand without one produces no haptics. Reach it as
 ## [code]HexR.controller(HexRTypes.Hand.LEFT)[/code].
 ##
 ## Calls other than the [code]remove_*[/code] ones only fire while the hand is near something:
-## grabbing, poke-hovering, or touching a [HexRProximityCheck] (the "hand-near check"). Pass
+## grabbing, poke-hovering, or touching a [ProximityCheck] (the "hand-near check"). Pass
 ## [code]bypass_hand_check[/code] to the custom calls to skip it.
 ##
 ## Intensity is 0.1..1 (about 15..50 kPa). Components use a 10..60 strength scale; convert with
@@ -43,7 +43,7 @@ static func strength_to_intensity(strength: float) -> float:
 
 
 ## This hand's glove, or null.
-func glove() -> HexRGlove:
+func glove() -> HaptGloveHandler:
 	var hub := HexRManager.get_instance()
 	return hub.glove(hand) if hub else null
 
@@ -238,7 +238,7 @@ func _release(finger: int) -> void:
 		g.bt_send(g.haptics.hexr_pressure(finger, false, 0.0, 1.0))
 
 
-func _glove_or_warn() -> HexRGlove:
+func _glove_or_warn() -> HaptGloveHandler:
 	var g := glove()
 	if g == null and not _warned_no_glove:
 		_warned_no_glove = true

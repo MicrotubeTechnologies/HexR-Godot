@@ -1,11 +1,11 @@
-class_name HexRTouchPoint
+class_name HapticFingerTrigger
 extends Area3D
 ## A fingertip or the palm of a tracked hand (port of the Unity package's HapticFingerTrigger).
 ## [HexRTrackedHand] creates six of them and moves them with the hand's joints. Zones and
 ## components find out which finger touched them from the touch point that entered them:
 ## [codeblock]
 ## func _on_area_entered(area: Area3D) -> void:
-##     if area is HexRTouchPoint:
+##     if area is HapticFingerTrigger:
 ##         area.trigger_fix_pressure(0.6)
 ## [/codeblock]
 
@@ -13,12 +13,12 @@ extends Area3D
 @export var finger: HexRTypes.Finger = HexRTypes.Finger.INDEX
 
 
-func controller() -> HexRPressureController:
+func controller() -> PressureTrackerMain:
 	var hub := HexRManager.get_instance()
-	return hub.controller(hand) as HexRPressureController if hub else null
+	return hub.controller(hand) as PressureTrackerMain if hub else null
 
 
-func glove() -> HexRGlove:
+func glove() -> HaptGloveHandler:
 	var hub := HexRManager.get_instance()
 	return hub.glove(hand) if hub else null
 

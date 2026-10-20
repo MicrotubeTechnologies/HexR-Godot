@@ -27,10 +27,10 @@ var _viewport: SubViewport
 var _quad: MeshInstance3D
 var _poke: Area3D
 var _grip: Area3D
-var _poker: HexRTouchPoint
+var _poker: HapticFingerTrigger
 var _last_poke := Vector2.ZERO
 var _drag_offset := Transform3D()
-var _dragging_with: HexRTouchPoint
+var _dragging_with: HapticFingerTrigger
 var _size := Vector2.ZERO
 
 
@@ -125,7 +125,7 @@ func _physics_process(_delta: float) -> void:
 func _update_drag() -> void:
 	var by_hand := [[null, null], [null, null]]  # [hand] -> [thumb, index]
 	for a in _grip.get_overlapping_areas():
-		if a is HexRTouchPoint and (a.finger == HexRTypes.Finger.THUMB or a.finger == HexRTypes.Finger.INDEX):
+		if a is HapticFingerTrigger and (a.finger == HexRTypes.Finger.THUMB or a.finger == HexRTypes.Finger.INDEX):
 			by_hand[a.hand][0 if a.finger == HexRTypes.Finger.THUMB else 1] = a
 	if _dragging_with == null:
 		for hand in 2:
@@ -146,9 +146,9 @@ func _update_drag() -> void:
 
 
 func _on_poke_entered(area: Area3D) -> void:
-	if _poker != null or _dragging_with != null or not (area is HexRTouchPoint):
+	if _poker != null or _dragging_with != null or not (area is HapticFingerTrigger):
 		return
-	var tp := area as HexRTouchPoint
+	var tp := area as HapticFingerTrigger
 	if tp.finger != HexRTypes.Finger.INDEX:
 		return
 	_poker = tp
@@ -173,13 +173,13 @@ func _on_poke_exited(area: Area3D) -> void:
 	_poker = null
 
 
-func _in_poke_volume(tp: HexRTouchPoint) -> bool:
+func _in_poke_volume(tp: HapticFingerTrigger) -> bool:
 	var local := to_local(tp.global_position)
 	return absf(local.x) <= _size.x * 0.5 and absf(local.y) <= _size.y * 0.5 			and local.z >= -0.01 and local.z <= POKE_DEPTH
 
 
 ## The fingertip mapped onto the panel, in viewport pixels.
-func _panel_position(tp: HexRTouchPoint) -> Vector2:
+func _panel_position(tp: HapticFingerTrigger) -> Vector2:
 	var local := to_local(tp.global_position)
 	var uv := Vector2(local.x / _size.x + 0.5, 0.5 - local.y / _size.y)
 	return uv.clamp(Vector2.ZERO, Vector2.ONE) * Vector2(_viewport.size)
@@ -191,7 +191,7 @@ func _send_at(pos: Vector2, event: InputEventMouse) -> void:
 	_viewport.push_input(event)
 
 
-func _tap(tp: HexRTouchPoint) -> void:
+func _tap(tp: HapticFingerTrigger) -> void:
 	tp.trigger_fix_pressure(TAP_INTENSITY)
 	await get_tree().create_timer(0.12).timeout
 	if is_instance_valid(tp):

@@ -32,8 +32,8 @@ func tick_physics(n: int) -> void:
 		hub.tick(now)
 
 
-func _finger(f: int, hand: int = H.LEFT) -> HexRTouchPoint:
-	var tp := HexRTouchPoint.new()
+func _finger(f: int, hand: int = H.LEFT) -> HapticFingerTrigger:
+	var tp := HapticFingerTrigger.new()
 	tp.hand = hand
 	tp.finger = f
 	tp.collision_layer = 1 << 19

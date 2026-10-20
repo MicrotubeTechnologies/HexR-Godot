@@ -1,8 +1,8 @@
-class_name HexRHaptics
+class_name Haptics
 extends RefCounted
 ## Builds the glove's haptic command frames (port of the Unity package's HaptGlove.Haptics).
 ##
-## Each glove owns one of these. The builders return bytes to send with [method HexRGlove.bt_send];
+## Each glove owns one of these. The builders return bytes to send with [method HaptGloveHandler.bt_send];
 ## they also record the last command per channel, which the floating menu's readout and
 ## HexR Remote's haptics feed read back. That record is commanded intent: the glove does
 ## not acknowledge commands.
