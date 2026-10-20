@@ -29,7 +29,7 @@ signal device_found(id: String, device_name: String, rssi: int)
 signal controllers_changed
 
 ## The addon's version.
-const VERSION := "0.1.0"
+const VERSION := "0.2.0"
 ## The HexR Remote protocol level this addon implements (the Unity package version it matches).
 const PROTOCOL_VERSION := "0.10.5"
 

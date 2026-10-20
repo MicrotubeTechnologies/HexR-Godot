@@ -1,6 +1,6 @@
 # HexR Godot addon: API reference
 
-Addon 0.1.0. Generated from the addon's doc comments by `tools/gen_api_docs.py`;
+Addon 0.2.0. Generated from the addon's doc comments by `tools/gen_api_docs.py`;
 edit those, not this file. The same text is in Godot's built-in help: press **F1** in the
 editor and search for `HexR`.
 
@@ -10,10 +10,10 @@ signatures). Intensities are 0.1–1 (about 15–50 kPa); frequencies are in Hz.
 ## Contents
 
 - **Gloves and connection**: [`HexRManager`](#hexrmanager), [`HaptGloveHandler`](#haptglovehandler), [`Haptics`](#haptics), [`HexRTypes`](#hexrtypes), [`HexRFrameDecoder`](#hexrframedecoder)
-- **Hands**: [`HexRRig`](#hexrrig), [`HexRTrackedHand`](#hexrtrackedhand), [`HapticFingerTrigger`](#hapticfingertrigger), [`FingerUseTracking`](#fingerusetracking)
+- **Hands**: [`HexRRig`](#hexrrig), [`HexRTrackedHand`](#hexrtrackedhand), [`HapticFingerTrigger`](#hapticfingertrigger), [`FingerUseTracking`](#fingerusetracking), [`HaptGloveCollidersVisualizer`](#haptglovecollidersvisualizer)
 - **Haptics**: [`PressureTrackerMain`](#pressuretrackermain)
 - **Scene nodes**: [`HexRGrabbable`](#hexrgrabbable), [`HexRPhysicalButton`](#hexrphysicalbutton), [`SpecialHaptics`](#specialhaptics), [`HexRUsable`](#hexrusable), [`ProximityCheck`](#proximitycheck), [`HexRInteractableHaptics`](#hexrinteractablehaptics), [`HexRXRToolsBinding`](#hexrxrtoolsbinding)
-- **Menu and HexR Remote**: [`HexRFloatingMenu`](#hexrfloatingmenu), [`HexRRemote`](#hexrremote)
+- **Menu, scenes and HexR Remote**: [`HexRFloatingMenu`](#hexrfloatingmenu), [`SceneLoader`](#sceneloader), [`HexRRemote`](#hexrremote)
 - [Internals](#internals)
 
 ---
@@ -82,7 +82,7 @@ It survives scene changes, as autoloads do. Scenes bring their own rig (tracked 
 
 ### Constants
 
-- **`VERSION := "0.1.0"`** — The addon's version.
+- **`VERSION := "0.2.0"`** — The addon's version.
 - **`PROTOCOL_VERSION := "0.10.5"`** — The HexR Remote protocol level this addon implements (the Unity package version it matches).
 
 ## HaptGloveHandler
@@ -352,6 +352,25 @@ How curled each finger is, from 0 (fully curled) to 1 (fully extended). Port of 
 - **`is_hand_open() -> bool`** — Every finger extended: what releases a [`HexRGrabbable`](#hexrgrabbable).
 - **`reset_calibration() -> void`**
 
+## HaptGloveCollidersVisualizer
+
+*extends `Node` · `addons/hexr/hands/hapt_glove_colliders_visualizer.gd`*
+
+Shows or hides the touch points on both tracked hands: the fingertip and palm spheres that fire haptics (port of the Unity package's HaptGloveCollidersVisualizer). The floating menu's Show Colliders button drives it.
+
+The HexR autoload owns one, so the setting survives scene changes; reach it as `HexR.colliders_visualizer` or `find()`.
+
+### Methods
+
+- **`static find() -> HaptGloveCollidersVisualizer`** — The running HexR manager's visualizer, or null.
+- **`is_showing() -> bool`**
+- **`collider_toggle() -> void`** — Shows the touch points if they are hidden, hides them if they are showing.
+- **`show() -> void`**
+- **`hide() -> void`**
+- **`set_visible(visible: bool) -> void`**
+- **`refresh() -> void`** — Applies the setting to the tracked hands in the scene. Called every frame, so hands that a new scene brings pick it up.
+- **`has_hands() -> bool`** — True if the scene has any tracked hand to show.
+
 ---
 
 # Haptics
@@ -613,7 +632,7 @@ Picking up marks the hand as grabbing on its Pressure Controller (opening the ha
 
 ---
 
-# Menu and HexR Remote
+# Menu, scenes and HexR Remote
 
 ## HexRFloatingMenu
 
@@ -649,6 +668,30 @@ One panel serves the whole session: the first one moves to the scene tree's root
 ### Constants
 
 - **`PRESS_DEPTH_PX := 30.0`** — Unity's press depth: 30 of its panel's 360 pixels, centred on the panel.
+
+## SceneLoader
+
+*extends `RefCounted` · `addons/hexr/core/scene_loader.gd`*
+
+Switches between the app's scenes (port of the Unity package's SceneLoader).
+
+Unity lists an app's scenes in Build Settings; Godot has no such list, so HexR keeps one in the project setting `hexr/scenes` (Project Settings > HexR, or HexR Tools > Project Setup). The floating menu's SCENES section, HexR Remote and these calls all use it, so an index means the same scene everywhere.
+
+```gdscript
+SceneLoader.load_scene("Hospital")      # by name, as Unity does
+SceneLoader.load_scene(2)               # by its place in hexr/scenes
+SceneLoader.load_next_scene()
+```
+
+### Methods
+
+- **`static scenes() -> PackedStringArray`** — The scenes listed in `hexr/scenes`, as res:// paths, in order.
+- **`static load_scene(scene: Variant) -> Error`** — Opens a scene by its index in `hexr/scenes`, its name ("Hospital", the file name without its extension), or its res:// path. Returns `OK`, or an error when there is no such scene. Opening the scene already open does nothing, as in the floating menu.
+- **`static reload_current_scene() -> Error`** — Reloads the scene that is open.
+- **`static load_next_scene() -> Error`** — Opens the next scene in `hexr/scenes`, wrapping round to the first.
+- **`static load_previous_scene() -> Error`** — Opens the previous scene in `hexr/scenes`, wrapping round to the last.
+- **`static get_current_scene_name() -> String`** — The open scene's name: its file name without the extension, as Unity names scenes.
+- **`static get_current_scene_index() -> int`** — The open scene's index in `hexr/scenes`, or -1 when it isn't listed.
 
 ## HexRRemote
 
@@ -713,7 +756,6 @@ source and in Godot's built-in help.
 
 | Class | File | What it is |
 |---|---|---|
-| `HaptGloveCollidersVisualizer` | `addons/hexr/hands/hapt_glove_colliders_visualizer.gd` | Shows or hides the touch points on both tracked hands: the fingertip and palm spheres that fire haptics (port of the Unity package's HaptGloveCollidersVisualizer). |
 | `HexRAndroidTransport` | `addons/hexr/transport/hexr_android_transport.gd` | Bluetooth through the HexRBle Android plugin (addons/hexr/android/bin/hexr-ble-*.aar). |
 | `HexRBleTransport` | `addons/hexr/transport/hexr_ble_transport.gd` | The Bluetooth LE link to the gloves. |
 | `HexRDeviceStore` | `addons/hexr/core/hexr_device_store.gd` | Remembers which physical glove each hand uses, so a reconnect skips the scan and a second glove for the same hand in range is not picked by mistake. |
@@ -730,4 +772,3 @@ source and in Godot's built-in help.
 | `HexRTlv` | `addons/hexr/core/hexr_tlv.gd` | Type-length-value field encoder for glove frames (port of Encode.cs). |
 | `HexRWindowsTransport` | `addons/hexr/transport/hexr_windows_transport.gd` | Bluetooth through the HexRBleWinRT GDExtension (addons/hexr/bin/windows). |
 | `HexRWriteCoalescer` | `addons/hexr/core/hexr_write_coalescer.gd` | Batches haptic commands into at most one Bluetooth write per interval. |
-| `SceneLoader` | `addons/hexr/core/scene_loader.gd` | Switches between the app's scenes (port of the Unity package's SceneLoader). |
