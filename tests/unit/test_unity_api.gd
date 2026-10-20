@@ -45,8 +45,11 @@ const PARITY := {
 			"follow_grip", "min_strength"],
 	"HexRFloatingMenu": ["recenter", "spawn_distance", "spawn_side_offset", "spawn_height_offset",
 			"panel_width", "show_haptics_readout"],
-	"HexRRemote": ["register_command", "unregister_command", "phones_connected", "allow_glove_control",
-			"allow_video", "expose_scenes"],
+	"HexRRemote": ["register_command", "unregister_command", "phones_connected", "phones_watching",
+			"allow_glove_control", "allow_video", "expose_scenes"],
+	"HaptGloveCollidersVisualizer": ["collider_toggle", "show", "hide", "set_visible", "is_showing", "refresh"],
+	"SceneLoader": ["load_scene", "reload_current_scene", "load_next_scene", "load_previous_scene",
+			"get_current_scene_name", "get_current_scene_index"],
 }
 
 
@@ -143,3 +146,33 @@ func test_0_1_property_names_still_load() -> void:
 	usable.set("fingers", 2)
 	assert_true(usable.index_finger and not usable.thumb and not usable.little_finger, "fingers bitmask")
 	usable.free()
+
+
+func test_scene_loader_reads_the_project_scene_list() -> void:
+	var before: Variant = ProjectSettings.get_setting(SceneLoader.SETTING, PackedStringArray())
+	ProjectSettings.set_setting(SceneLoader.SETTING, PackedStringArray(["res://a/1_basic.tscn", "res://a/2_hospital.tscn"]))
+	assert_eq(SceneLoader.scenes(), PackedStringArray(["res://a/1_basic.tscn", "res://a/2_hospital.tscn"]), "list")
+	assert_eq(SceneLoader._resolve(1), "res://a/2_hospital.tscn", "by index")
+	assert_eq(SceneLoader._resolve("2_hospital"), "res://a/2_hospital.tscn", "by name")
+	assert_eq(SceneLoader._resolve("2 Hospital"), "res://a/2_hospital.tscn", "by display name")
+	assert_eq(SceneLoader._resolve(7), "", "out of range")
+	ProjectSettings.set_setting(SceneLoader.SETTING, before)
+
+
+func test_colliders_visualizer_toggles_the_touch_points() -> void:
+	var hub := HexRManager.new()
+	hub.drive_from_process = false
+	hub.setup(HexRSimulatedTransport.new(), HexRDeviceStore.new(""))
+	hub.make_current()
+	add_child(hub)
+	var hand := HexRTrackedHand.new()
+	hand.hand_type = H.LEFT
+	add_child(hand)
+	var v := hub.colliders_visualizer
+	assert_false(v.is_showing(), "hidden at first")
+	v.collider_toggle()
+	assert_true(v.is_showing() and hand.show_touch_points, "shown")
+	v.hide()
+	assert_false(hand.show_touch_points, "hidden")
+	hand.queue_free()
+	hub.queue_free()

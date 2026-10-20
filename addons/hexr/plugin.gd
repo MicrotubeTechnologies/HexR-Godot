@@ -16,6 +16,10 @@ const SETTINGS := [
 		"hint_string": "Give the simulated transport a left and a right glove to connect to."},
 	{"name": "hexr/remote/record_audio", "type": TYPE_INT, "default": 0, "hint": PROPERTY_HINT_ENUM,
 		"hint_string": "Auto,Always,Never"},
+	# The app's scenes, in order: Godot's stand-in for Unity's Build Settings list. The floating
+	# menu's SCENES, HexR Remote and SceneLoader use it. Hint "4/13:..." is String / FILE.
+	{"name": "hexr/scenes", "type": TYPE_PACKED_STRING_ARRAY, "default": [],
+		"hint": PROPERTY_HINT_TYPE_STRING, "hint_string": "4/13:*.tscn,*.scn", "basic": true},
 ]
 
 var _export_plugin: EditorExportPlugin
@@ -147,11 +151,15 @@ func _find_origin(root: Node) -> XROrigin3D:
 func _add_settings() -> void:
 	for s: Dictionary in SETTINGS:
 		var setting_name: String = s["name"]
+		var default: Variant = s["default"]
+		if s["type"] == TYPE_PACKED_STRING_ARRAY:
+			default = PackedStringArray(default)  # a constant can't hold one
 		if not ProjectSettings.has_setting(setting_name):
-			ProjectSettings.set_setting(setting_name, s["default"])
-		ProjectSettings.set_initial_value(setting_name, s["default"])
+			ProjectSettings.set_setting(setting_name, default)
+		ProjectSettings.set_initial_value(setting_name, default)
 		ProjectSettings.add_property_info({"name": setting_name, "type": s["type"],
 				"hint": s.get("hint", PROPERTY_HINT_NONE), "hint_string": s.get("hint_string", "")})
+		ProjectSettings.set_as_basic(setting_name, s.get("basic", false))
 
 
 ## Names the two physics layers the touch points and zones use, unless the project already

@@ -26,10 +26,9 @@ static var _command_order: PackedStringArray = []
 @export var allow_glove_control := true
 ## Share the headset view. The wearer still has to accept Android's prompt each session.
 @export var allow_video := true
-## Show the phone [member scenes] and let it switch between them.
+## Show the phone the scenes in the project setting [code]hexr/scenes[/code] (Godot's stand-in
+## for Unity's Build Settings, see [SceneLoader]) and let it switch between them.
 @export var expose_scenes := false
-## The scenes a phone can switch to, in order.
-@export_file("*.tscn", "*.scn") var scenes: Array[String] = []
 
 @export_group("Sharing the view")
 ## Encoded size, rounded to a multiple of 16. Quest's compositor delivers a square view.
@@ -57,6 +56,11 @@ var announce_address := "255.255.255.255"
 
 var _server: HexRRemoteServer
 var _stream: HexRRemoteStream
+var _viewers := 0
+# A 0.1 scene's own scene list; used only while hexr/scenes is empty.
+var _scenes_0_1: Array[String] = []
+
+const _SceneLoader := preload("res://addons/hexr/core/scene_loader.gd")
 var _handler: HexRRemoteCommands
 var _haptics: HexRRemoteHaptics
 var _paused := false
@@ -153,13 +157,33 @@ func phones_connected() -> int:
 	return _server.client_count() if _server else 0
 
 
+## How many phones are watching the headset's view right now (Unity [code]PhonesWatching[/code]).
+func phones_watching() -> int:
+	return _viewers
+
+
+## The scenes a phone can switch to: [code]hexr/scenes[/code].
+func scenes() -> PackedStringArray:
+	var list := _SceneLoader.scenes()
+	return list if not list.is_empty() else PackedStringArray(_scenes_0_1)
+
+
+# Scenes saved with HexR 0.1 carry their own scene list.
+func _set(property: StringName, value: Variant) -> bool:
+	if property != &"scenes":
+		return false
+	_scenes_0_1.assign(value)
+	HexRTypes.warn_renamed(self, "scenes", "the hexr/scenes project setting")
+	return true
+
+
 func begin() -> void:
 	if is_running():
 		return
 	_identity = _make_identity()
 	_haptics = HexRRemoteHaptics.new(clock_us)
 	_stream = HexRRemoteStream.create(self)
-	_handler = HexRRemoteCommands.new(HexRManager.get_instance, _stream, func() -> int: return scenes.size(), _load_scene)
+	_handler = HexRRemoteCommands.new(HexRManager.get_instance, _stream, func() -> int: return scenes().size(), _load_scene)
 	_server = HexRRemoteServer.new()
 	_server.announce_address = announce_address
 	if OS.get_name() == "Android" and Engine.has_singleton("HexRBle"):
@@ -224,6 +248,7 @@ func _publish_status() -> void:
 	if _server == null:
 		return
 	var stream := _stream.read()
+	_viewers = int(stream.get("viewers", 0))
 	if not allow_video and stream["state"] != HexRRemoteProtocol.STREAM_LIVE:
 		stream["state"] = HexRRemoteProtocol.STREAM_UNSUPPORTED
 		stream["message"] = "This app does not share its view."
@@ -234,8 +259,9 @@ func _publish_status() -> void:
 		_update_announce(stream["port"])
 	var listed := []
 	if expose_scenes:
-		for i in scenes.size():
-			listed.append(HexRRemoteProtocol.scene_info(i, HexRRemoteProtocol.scene_display_name(scenes[i])))
+		var list := scenes()
+		for i in list.size():
+			listed.append(HexRRemoteProtocol.scene_info(i, HexRRemoteProtocol.scene_display_name(list[i])))
 	_server.publish_status(HexRRemoteProtocol.status(_identity["id"], _identity["name"], _identity["model"],
 			_identity["platform"], _identity["app"], _identity["app_version"], HEXR_VERSION, _paused,
 			_headset_battery(), _current_scene(), listed, HexRRemoteCommands.glove_status(HexRManager.get_instance()),
@@ -305,7 +331,7 @@ func _current_scene() -> Dictionary:
 	if current == null:
 		return HexRRemoteProtocol.scene_info(-1, "")
 	var path := current.scene_file_path
-	var index := scenes.find(path)
+	var index := scenes().find(path)
 	if index >= 0:
 		return HexRRemoteProtocol.scene_info(index, HexRRemoteProtocol.scene_display_name(path))
 	return HexRRemoteProtocol.scene_info(-1, HexRRemoteProtocol.scene_display_name(path) if not path.is_empty() else String(current.name))
@@ -313,7 +339,8 @@ func _current_scene() -> Dictionary:
 
 ## The floating menu's rule: switching to the scene already open does nothing.
 func _load_scene(index: int) -> void:
+	var list := scenes()
 	var current := get_tree().current_scene
-	if current and current.scene_file_path == scenes[index]:
+	if current and current.scene_file_path == list[index]:
 		return
-	get_tree().change_scene_to_file(scenes[index])
+	get_tree().change_scene_to_file(list[index])

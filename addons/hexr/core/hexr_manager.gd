@@ -44,6 +44,8 @@ var right_controller: PressureTrackerMain
 ## The scene's tracked hands, set when they enter the tree.
 var left_tracked_hand: HexRTrackedHand
 var right_tracked_hand: HexRTrackedHand
+## Shows or hides the touch points on both hands (the floating menu's Show Colliders).
+var colliders_visualizer: HaptGloveCollidersVisualizer
 ## When false, nothing advances until [method tick] is called (tests drive time themselves).
 var drive_from_process := true
 
@@ -64,6 +66,9 @@ var _awaiting_permission := false
 func _init() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	process_priority = -1000
+	colliders_visualizer = HaptGloveCollidersVisualizer.new()
+	colliders_visualizer.name = "HaptGloveCollidersVisualizer"
+	add_child(colliders_visualizer)
 
 
 ## The running HexR manager: the HexR autoload, or one made current with [method make_current].

@@ -15,6 +15,7 @@ func _ready() -> void:
 	var remote := HexRRemote.new()
 	remote.announce_address = "127.0.0.1"
 	remote.expose_scenes = true
-	remote.scenes = ["res://tests/harness/remote_harness.tscn", "res://tests/smoke/ble_smoke.tscn"]
+	ProjectSettings.set_setting(SceneLoader.SETTING,
+			PackedStringArray(["res://tests/harness/remote_harness.tscn", "res://tests/smoke/ble_smoke.tscn"]))
 	add_child(remote)
 	print("[harness] ready on %d" % remote.get_control_port())

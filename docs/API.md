@@ -56,6 +56,7 @@ It survives scene changes, as autoloads do. Scenes bring their own rig (tracked 
 - **`right_controller: PressureTrackerMain`**
 - **`left_tracked_hand: HexRTrackedHand`** — The scene's tracked hands, set when they enter the tree.
 - **`right_tracked_hand: HexRTrackedHand`**
+- **`colliders_visualizer: HaptGloveCollidersVisualizer`** — Shows or hides the touch points on both hands (the floating menu's Show Colliders).
 - **`drive_from_process := true`** — When false, nothing advances until `tick()` is called (tests drive time themselves).
 - **`static instance: HexRManager`** — The running HexR manager (Unity `HexRManager.Instance`): the HexR autoload, or one made current with `make_current()`. Null when there is none.
 
@@ -652,8 +653,7 @@ HexRRemote.register_command("reset", "Reset demo", reset_demo)
 
 - **`allow_glove_control := true`** — Connect and disconnect the gloves, and release their haptics.
 - **`allow_video := true`** — Share the headset view. The wearer still has to accept Android's prompt each session.
-- **`expose_scenes := false`** — Show the phone `scenes` and let it switch between them.
-- **`scenes: Array[String] = []`** — The scenes a phone can switch to, in order.
+- **`expose_scenes := false`** — Show the phone the scenes in the project setting `hexr/scenes` (Godot's stand-in for Unity's Build Settings, see [`SceneLoader`](#sceneloader)) and let it switch between them.
 - **`video_width := 1024`** — Encoded size, rounded to a multiple of 16. Quest's compositor delivers a square view.
 - **`video_height := 1024`**
 - **`video_bitrate_kbps := 4000`**
@@ -681,6 +681,8 @@ HexRRemote.register_command("reset", "Reset demo", reset_demo)
 - **`is_running() -> bool`**
 - **`get_control_port() -> int`** — The control port in use (it moves up if the preferred one is taken).
 - **`phones_connected() -> int`**
+- **`phones_watching() -> int`** — How many phones are watching the headset's view right now (Unity `PhonesWatching`).
+- **`scenes() -> PackedStringArray`** — The scenes a phone can switch to: `hexr/scenes`.
 - **`begin() -> void`**
 - **`shutdown() -> void`**
 - **`clock_us() -> int`** — Microseconds on the clock the video and sound are stamped with (CLOCK_MONOTONIC on Android).
@@ -698,6 +700,7 @@ source and in Godot's built-in help.
 
 | Class | File | What it is |
 |---|---|---|
+| `HaptGloveCollidersVisualizer` | `addons/hexr/hands/hapt_glove_colliders_visualizer.gd` | Shows or hides the touch points on both tracked hands: the fingertip and palm spheres that fire haptics (port of the Unity package's HaptGloveCollidersVisualizer). |
 | `HexRAndroidTransport` | `addons/hexr/transport/hexr_android_transport.gd` | Bluetooth through the HexRBle Android plugin (addons/hexr/android/bin/hexr-ble-*.aar). |
 | `HexRBleTransport` | `addons/hexr/transport/hexr_ble_transport.gd` | The Bluetooth LE link to the gloves. |
 | `HexRDeviceStore` | `addons/hexr/core/hexr_device_store.gd` | Remembers which physical glove each hand uses, so a reconnect skips the scan and a second glove for the same hand in range is not picked by mistake. |
@@ -714,3 +717,4 @@ source and in Godot's built-in help.
 | `HexRTlv` | `addons/hexr/core/hexr_tlv.gd` | Type-length-value field encoder for glove frames (port of Encode.cs). |
 | `HexRWindowsTransport` | `addons/hexr/transport/hexr_windows_transport.gd` | Bluetooth through the HexRBleWinRT GDExtension (addons/hexr/bin/windows). |
 | `HexRWriteCoalescer` | `addons/hexr/core/hexr_write_coalescer.gd` | Batches haptic commands into at most one Bluetooth write per interval. |
+| `SceneLoader` | `addons/hexr/core/scene_loader.gd` | Switches between the app's scenes (port of the Unity package's SceneLoader). |
