@@ -105,10 +105,10 @@ func _create_rig() -> void:
 		var side := HexRTypes.hand_name(hand)
 		var h := HexRTrackedHand.new()
 		h.name = side + "Hand"
-		h.hand = hand
+		h.hand_type = hand
 		var c := PressureTrackerMain.new()
 		c.name = side + "PressureController"
-		c.hand = hand
+		c.hand_type = hand
 		for n in [h, c]:
 			ur.add_do_method(rig, "add_child", n, true)
 			ur.add_do_method(n, "set_owner", root)

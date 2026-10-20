@@ -286,6 +286,41 @@ def render(classes: dict[str, GdClass], version: str) -> str:
     return "\n".join(out)
 
 
+# Names HexR 0.1 used before the addon took the Unity package's names. Doc comments must not
+# mention them any more (the 0.1 property shims mention them in code, which is not checked).
+OLD_NAMES = re.compile(
+    r"\b(HexRGlove|HexRHaptics|HexRTouchPoint|HexRPressureController|HexRFingerUseTracking|"
+    r"HexRProximityCheck|HexRSpecialHaptics|connect_toggle|get_finger_positions|trigger_pulse_all|"
+    r"grab_type|GrabType|vibration_frequency|heart_beat(?!_)|HexRTypes\.(?:Hand|Finger|HapticMode|BatteryState|Op))\b"
+    r"|\[member (?:effect|target|fingers|hand|finger)\]|(?<!optional_)\bcustom_device_name\b")
+REF = re.compile(r"\[(?:method|member|signal|enum|constant) ([\w.]+)\]")
+
+
+def check_docs(classes: dict[str, GdClass]) -> list[str]:
+    """Doc comments that name a 0.1 name, or point at a member of an addon class that is not there."""
+    problems = []
+    for c in classes.values():
+        rel = c.path.relative_to(ROOT).as_posix()
+        for line in c.doc + [l for m in c.members for l in m.doc]:
+            for m in OLD_NAMES.finditer(line):
+                problems.append(f"{rel}: 0.1 name '{m.group(0)}' in: {line.strip()}")
+            for m in REF.finditer(line):
+                parts = m.group(1).split(".")
+                if len(parts) == 2 and parts[0] in classes:
+                    target, name = classes[parts[0]], parts[1]
+                elif len(parts) == 1:
+                    target, name = c, parts[0]
+                else:
+                    continue  # a Godot class, or a nested enum value
+                names = {mm.name for mm in target.members}
+                if name not in names and not any(f"enum {name} " in l or f"func {name}(" in l for l in
+                                                  target.path.read_text(encoding="utf-8").splitlines()):
+                    if target is c and len(parts) == 1:
+                        continue  # probably inherited from the Godot base class
+                    problems.append(f"{rel}: [{m.group(0)[1:-1]}] does not exist")
+    return problems
+
+
 def main(argv: list[str]) -> int:
     classes = {}
     for p in sorted(ADDON.rglob("*.gd")):
@@ -294,6 +329,12 @@ def main(argv: list[str]) -> int:
         c = parse(p)
         if c.name:
             classes[c.name] = c
+    problems = check_docs(classes)
+    for p in problems:
+        print(p)
+    if problems:
+        print(f"{len(problems)} doc comment problem(s)")
+        return 1
     m = re.search(r'^version="([^"]+)"', (ADDON / "plugin.cfg").read_text(encoding="utf-8"), re.M)
     text = render(classes, m.group(1) if m else "?")
     if "--check" in argv:

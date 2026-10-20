@@ -23,8 +23,8 @@ func _physics_process(_delta: float) -> void:
 	var touching: Array[bool] = [false, false]
 	for area in get_overlapping_areas():
 		if area is HapticFingerTrigger:
-			touching[area.hand] = true
-			_last_contact[area.hand] = now
+			touching[area.hand_type] = true
+			_last_contact[area.hand_type] = now
 	for hand in 2:
 		if touching[hand]:
 			_set_near(hand, true)

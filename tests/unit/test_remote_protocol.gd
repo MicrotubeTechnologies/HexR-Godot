@@ -146,9 +146,9 @@ func test_disconnect_connected_glove() -> void:
 
 func test_release_switches_every_channel_off() -> void:
 	connect_left()
-	hub.left.bt_send(hub.left.haptics.hexr_pressure(F.INDEX, true, 0.5, 1.0))
+	hub.left_hand.bt_send(hub.left_hand.haptics.hexr_pressure(F.INDEX, true, 0.5, 1.0))
 	assert_eq(run(RELEASE), "", "accepted")
-	assert_eq(hub.left.haptics.get_channel_state(F.INDEX).mode, Haptics.HapticMode.OFF, "index off")
+	assert_eq(hub.left_hand.haptics.get_channel_state(F.INDEX).mode, Haptics.HapticMode.OFF, "index off")
 
 
 func test_release_rejects_an_unknown_hand() -> void:
@@ -210,8 +210,8 @@ func test_glove_status_reports_state_battery_and_gauge_pressure() -> void:
 	var p := PackedByteArray()
 	for v in [101000.0, 100000.0, 100000.0, 100000.0, 100000.0, 100000.0, 145200.0]:
 		p.append_array(HexRTlv.f32(v))
-	hub.left.decoder.feed(HexRFrameDecoder.build_inbound(HexRTypes.InOp.PRESSURE, p))
-	hub.left.decoder.feed(HexRFrameDecoder.build_inbound(HexRTypes.InOp.BATTERY, HexRTlv.f32(0.83)))
+	hub.left_hand.decoder.feed(HexRFrameDecoder.build_inbound(HexRTypes.InOp.PRESSURE, p))
+	hub.left_hand.decoder.feed(HexRFrameDecoder.build_inbound(HexRTypes.InOp.BATTERY, HexRTlv.f32(0.83)))
 	var gloves := HexRRemoteCommands.glove_status(hub)
 	assert_eq([gloves[0]["hand"], gloves[0]["state"], gloves[0]["batteryPct"]], ["left", "connected", 83], "left")
 	assert_eq(gloves[0]["pressureDeciKPa"], [10, 0, 0, 0, 0, 0, 452], "gauge deci-kPa")
@@ -280,7 +280,7 @@ func test_haptics_feed_press_then_release() -> void:
 	var lines := []
 	feed.poll(hub, lines)
 	assert_eq(lines.size(), 0, "nothing on yet")
-	hub.right.haptics.hexr_pressure(F.INDEX, true, 0.8, 1.0)
+	hub.right_hand.haptics.hexr_pressure(F.INDEX, true, 0.8, 1.0)
 	t[0] = 2000
 	feed.poll(hub, lines)
 	assert_eq(lines.size(), 1, "one line")
@@ -291,7 +291,7 @@ func test_haptics_feed_press_then_release() -> void:
 	lines.clear()
 	feed.poll(hub, lines)
 	assert_eq(lines.size(), 0, "held: nothing new")
-	hub.right.haptics.hexr_pressure(F.INDEX, false, 0.8, 1.0)
+	hub.right_hand.haptics.hexr_pressure(F.INDEX, false, 0.8, 1.0)
 	feed.poll(hub, lines)
 	var off: Dictionary = _parse(lines[0])["channels"][0]
 	assert_eq([int(off["finger"]), off["mode"]], [1, "off"], "release")
@@ -301,8 +301,8 @@ func test_haptics_feed_on_and_off_in_one_frame_is_a_tap() -> void:
 	var feed := HexRRemoteHaptics.new(func() -> int: return 1)
 	var lines := []
 	feed.poll(hub, lines)
-	hub.left.haptics.hexr_vibration(F.PALM, true, 6.0, 0.5)
-	hub.left.haptics.hexr_vibration(F.PALM, false, 6.0, 0.5)
+	hub.left_hand.haptics.hexr_vibration(F.PALM, true, 6.0, 0.5)
+	hub.left_hand.haptics.hexr_vibration(F.PALM, false, 6.0, 0.5)
 	feed.poll(hub, lines)
 	var tap: Dictionary = _parse(lines[0])["channels"][0]
 	assert_eq([int(tap["finger"]), tap["mode"], int(tap["intensityPct"]), int(tap["frequencyDeciHz"]), tap["tap"]],
@@ -311,7 +311,7 @@ func test_haptics_feed_on_and_off_in_one_frame_is_a_tap() -> void:
 
 func test_haptics_feed_snapshot_has_every_channel() -> void:
 	var feed := HexRRemoteHaptics.new(func() -> int: return 1)
-	hub.left.haptics.hexr_pressure(F.THUMB, true, 1.0, 1.0)
+	hub.left_hand.haptics.hexr_pressure(F.THUMB, true, 1.0, 1.0)
 	feed.poll(hub, [])
 	var snapshot := feed.snapshot()
 	assert_eq(snapshot.size(), 2, "both hands")
@@ -324,7 +324,7 @@ func test_haptics_feed_snapshot_has_every_channel() -> void:
 func test_haptics_feed_rig_going_away_turns_channels_off() -> void:
 	var feed := HexRRemoteHaptics.new(func() -> int: return 1)
 	var lines := []
-	hub.right.haptics.hexr_pressure(F.RING, true, 0.5, 1.0)
+	hub.right_hand.haptics.hexr_pressure(F.RING, true, 0.5, 1.0)
 	feed.poll(hub, lines)
 	lines.clear()
 	feed.poll(null, lines)

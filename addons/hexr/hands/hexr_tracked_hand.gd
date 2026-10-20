@@ -36,7 +36,7 @@ const DEFAULT_TIP_OFFSETS_RIGHT: Array[Vector3] = [
 	Vector3(0.0013, -0.0054, 0.0055), Vector3(0.0012, -0.0060, 0.0070),
 ]
 
-@export var hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT
+@export var hand_type: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT
 ## Leave empty for the standard OpenXR tracker (/user/hand_tracker/left or /right).
 @export var tracker_name: StringName = &""
 @export var tip_radius := 0.008
@@ -77,7 +77,7 @@ func _exit_tree() -> void:
 func get_tracker_name() -> StringName:
 	if tracker_name != &"":
 		return tracker_name
-	return &"/user/hand_tracker/left" if hand == HaptGloveHandler.HandType.LEFT else &"/user/hand_tracker/right"
+	return &"/user/hand_tracker/left" if hand_type == HaptGloveHandler.HandType.LEFT else &"/user/hand_tracker/right"
 
 
 func get_tracker() -> XRHandTracker:
@@ -101,12 +101,12 @@ func is_joint_valid(joint: int) -> bool:
 func _build_touch_points() -> void:
 	if not touch_points.is_empty():
 		return
-	var offsets := tip_offsets if tip_offsets.size() == 5 else (DEFAULT_TIP_OFFSETS_LEFT if hand == HaptGloveHandler.HandType.LEFT else DEFAULT_TIP_OFFSETS_RIGHT)
+	var offsets := tip_offsets if tip_offsets.size() == 5 else (DEFAULT_TIP_OFFSETS_LEFT if hand_type == HaptGloveHandler.HandType.LEFT else DEFAULT_TIP_OFFSETS_RIGHT)
 	for f in 6:
 		var tp := HapticFingerTrigger.new()
-		tp.hand = hand
-		tp.finger = f
-		tp.name = "%s%s" % [HexRTypes.hand_name(hand), HexRTypes.finger_name(f)]
+		tp.hand_type = hand_type
+		tp.finger_type = f
+		tp.name = "%s%s" % [HexRTypes.hand_name(hand_type), HexRTypes.finger_name(f)]
 		tp.collision_layer = touch_layer
 		tp.collision_mask = 0
 		tp.monitoring = false

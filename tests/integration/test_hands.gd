@@ -26,7 +26,7 @@ func before_each() -> void:
 	hub.setup(sim, HexRDeviceStore.new(""))
 	add_child(hub)
 	hub.make_current()
-	for g in [hub.left, hub.right]:
+	for g in [hub.left_hand, hub.right_hand]:
 		g.coalescer.min_interval_ms = 0
 	hub.connect_hand(H.LEFT)
 	for i in 50:
@@ -163,7 +163,7 @@ func test_proximity_opens_hand_near_check() -> void:
 
 func test_special_haptics_fountain_vibrates_and_stops() -> void:
 	var zone := SpecialHaptics.new()
-	zone.effect = SpecialHaptics.Effect.FOUNTAIN
+	zone.type_of_haptics = SpecialHaptics.Options.FOUNTAIN_EFFECT
 	_zone_at(zone, _tip(F.INDEX), 0.015)
 	await wait_physics(30)
 	assert_true(lg.vibrating[F.INDEX], "index vibrating in the fountain")
@@ -176,7 +176,7 @@ func test_special_haptics_fountain_vibrates_and_stops() -> void:
 
 func test_special_haptics_custom_presses_and_releases() -> void:
 	var zone := SpecialHaptics.new()
-	zone.effect = SpecialHaptics.Effect.CUSTOM_HAPTICS
+	zone.type_of_haptics = SpecialHaptics.Options.CUSTOM_HAPTICS
 	zone.haptic_pressure = 40.0
 	_zone_at(zone, _tip(F.RING), 0.012)
 	await wait_physics(4)
@@ -188,7 +188,7 @@ func test_special_haptics_custom_presses_and_releases() -> void:
 
 func test_zone_releases_on_removal() -> void:
 	var zone := SpecialHaptics.new()
-	zone.effect = SpecialHaptics.Effect.CUSTOM_VIBRATIONS
+	zone.type_of_haptics = SpecialHaptics.Options.CUSTOM_VIBRATIONS
 	zone.vibration_frequency = 25.0
 	_zone_at(zone, _tip(F.INDEX), 0.015)
 	await wait_physics(20)

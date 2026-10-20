@@ -9,8 +9,14 @@ extends Area3D
 signal used(hand: int)
 signal stopped_using(hand: int)
 
-## The fingers that have to curl.
-@export_flags("Thumb", "Index", "Middle", "Ring", "Pinky") var fingers: int = 2
+@export_group("Fingers that have to curl")
+## The fingers that have to curl, all five by default as in the Unity package.
+@export var thumb := true
+@export var index_finger := true
+@export var middle_finger := true
+@export var ring_finger := true
+@export var little_finger := true
+@export_group("")
 ## 0 is fully curled, 1 fully extended. A finger counts as curled below this.
 @export_range(0.0, 1.0, 0.05) var use_threshold := 0.3
 
@@ -24,6 +30,20 @@ func _init() -> void:
 	monitorable = false
 
 
+# Scenes saved with HexR 0.1 store the fingers as one bitmask.
+func _set(property: StringName, value: Variant) -> bool:
+	if property != &"fingers":
+		return false
+	var mask := int(value)
+	thumb = mask & 1 != 0
+	index_finger = mask & 2 != 0
+	middle_finger = mask & 4 != 0
+	ring_finger = mask & 8 != 0
+	little_finger = mask & 16 != 0
+	HexRTypes.warn_renamed(self, "fingers", "thumb/index_finger/middle_finger/ring_finger/little_finger")
+	return true
+
+
 func is_in_use() -> bool:
 	return _in_use
 
@@ -32,7 +52,7 @@ func _physics_process(_delta: float) -> void:
 	if not _in_use:
 		for area in get_overlapping_areas():
 			if area is HapticFingerTrigger:
-				_hand = area.hand
+				_hand = area.hand_type
 				break
 	if _hand < 0:
 		return
@@ -51,8 +71,9 @@ func _physics_process(_delta: float) -> void:
 
 func _all_needed(use: FingerUseTracking, test: Callable) -> bool:
 	var any := false
+	var needed := [thumb, index_finger, middle_finger, ring_finger, little_finger]
 	for f in 5:
-		if fingers & (1 << f):
+		if needed[f]:
 			any = true
 			if not test.call(use.get_use(f)):
 				return false

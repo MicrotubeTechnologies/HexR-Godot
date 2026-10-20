@@ -81,8 +81,8 @@ func _ready() -> void:
 	tools.add_child(_ghost_button("Release all", func() -> void:
 		var hub := HexRManager.get_instance()
 		if hub:
-			hub.left.release_all_channels()
-			hub.right.release_all_channels()))
+			hub.left_hand.release_all_channels()
+			hub.right_hand.release_all_channels()))
 	tools.add_child(_ghost_button("Show touch points", func() -> void:
 		_touch_points_visible = not _touch_points_visible
 		touch_points_toggled.emit(_touch_points_visible)))
@@ -105,7 +105,7 @@ func _process(_delta: float) -> void:
 		return
 	_refresh_at = now + 200
 	var hub := HexRManager.get_instance()
-	if hub == null or hub.left == null:
+	if hub == null or hub.left_hand == null:
 		return
 	for hand in 2:
 		var g := hub.glove(hand)

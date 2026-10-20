@@ -53,7 +53,7 @@ func _ready() -> void:
 	HexR.device_found.connect(func(id: String, n: String, rssi: int) -> void:
 		if n.begins_with("HaptGlove"):
 			_say("found %s [%s] %d dBm" % [n, id, rssi]))
-	for g in [HexR.left, HexR.right]:
+	for g in [HexR.left_hand, HexR.right_hand]:
 		g.verbose = true
 	_say("transport %s, available %s %s, permissions needed %s" % [HexR.transport.get_kind(),
 			HexR.transport.is_available(), HexR.transport.get_unavailable_reason(), HexR.transport.needs_permissions()])
@@ -81,7 +81,7 @@ func _autotest() -> void:
 		_say("AUTOTEST %s MTU %d battery %.2f frames pos/pres/bat %d/%d/%d bad %d kPa %s pos %s" % [
 				HexRTypes.hand_name(hand), g.mtu, g.get_battery_level(), g.decoder.position_frames,
 				g.decoder.pressure_frames, g.decoder.battery_frames, g.decoder.bad_frames,
-				str(g.get_air_pressure_kpa()), str(g.get_finger_positions())])
+				str(g.get_air_pressure_kpa()), str(g.get_finger_position())])
 		for f in 6:
 			g.bt_send(g.haptics.hexr_pressure(f, true, 0.6, 1.0))
 			await get_tree().create_timer(0.8).timeout
@@ -180,7 +180,7 @@ func _process(_delta: float) -> void:
 				parts.append("%.1f" % v)
 			labels[1].text = "MTU %d · battery %d%% · frames %d/%d/%d bad %d\nkPa %s\npositions %s" % [
 				g.mtu, roundi(g.get_battery_level() * 100.0), g.decoder.position_frames, g.decoder.pressure_frames,
-				g.decoder.battery_frames, g.decoder.bad_frames, " ".join(parts), str(g.get_finger_positions())]
+				g.decoder.battery_frames, g.decoder.bad_frames, " ".join(parts), str(g.get_finger_position())]
 		else:
 			labels[1].text = ""
 

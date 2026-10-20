@@ -42,7 +42,7 @@ func test_scan_connect_and_subscribe_once() -> void:
 	assert_true(hub.is_hand_connected(H.LEFT), "connected")
 	assert_false(hub.is_hand_connecting(H.LEFT), "no longer connecting")
 	assert_eq(lg.subscriptions_this_connection, 1, "subscribed exactly once")
-	assert_eq(hub.left.get_remembered_device_id(), "AA:LEFT", "remembers the glove")
+	assert_eq(hub.left_hand.get_remembered_device_id(), "AA:LEFT", "remembers the glove")
 	assert_true(events.has("glove_connected:Left"), "event")
 
 
@@ -83,7 +83,7 @@ func test_second_connect_starts_pump_again() -> void:
 func test_disconnect_releases_first() -> void:
 	hub.connect_hand(H.LEFT)
 	advance(500)
-	hub.left.bt_send(hub.left.haptics.hexr_pressure(F.INDEX, true, 0.8, 1.0))
+	hub.left_hand.bt_send(hub.left_hand.haptics.hexr_pressure(F.INDEX, true, 0.8, 1.0))
 	advance(200)
 	assert_true(lg.any_channel_on(), "index pressing")
 	var before := lg.received_frames.size()
@@ -101,7 +101,7 @@ func test_writes_are_batched_and_fit_mtu() -> void:
 	advance(500)
 	var before := lg.received_frames.size()
 	for f in 6:
-		hub.left.bt_send(hub.left.haptics.hexr_pressure(f, true, 0.5, 1.0))
+		hub.left_hand.bt_send(hub.left_hand.haptics.hexr_pressure(f, true, 0.5, 1.0))
 	assert_eq(lg.received_frames.size(), before, "nothing written in the same frame")
 	advance(120)
 	assert_eq(lg.received_frames.size() - before, 6, "all six arrive")
@@ -118,7 +118,7 @@ func test_failed_attempts_back_off_then_give_up() -> void:
 	advance(75000, 50)
 	assert_false(hub.is_hand_connecting(H.LEFT), "gave up after 60 s")
 	assert_true(events.has("connect_attempt_ended:Left"), "campaign ended")
-	assert_true(hub.left.status_text.contains("not found"), "status says so")
+	assert_true(hub.left_hand.status_text.contains("not found"), "status says so")
 
 
 func test_cancel_during_retry() -> void:
@@ -152,7 +152,7 @@ func test_drop_reopens_campaign_and_reconnects_directly() -> void:
 	advance(100)
 	assert_false(hub.is_hand_connected(H.LEFT), "dropped")
 	assert_eq(seen, [true] as Array[bool], "listeners see is_connecting() during the event")
-	assert_true(hub.left.status_text.contains("reconnecting"), "status")
+	assert_true(hub.left_hand.status_text.contains("reconnecting"), "status")
 	advance(2000)
 	assert_true(hub.is_hand_connected(H.LEFT), "reconnected")
 	assert_eq(lg.connections, 2, "second connection")
@@ -160,20 +160,20 @@ func test_drop_reopens_campaign_and_reconnects_directly() -> void:
 
 
 func test_remembered_glove_skips_scan_and_falls_back() -> void:
-	hub.left.remember_device("AA:LEFT")
+	hub.left_hand.remember_device("AA:LEFT")
 	hub.connect_hand(H.LEFT)
 	assert_false(sim.is_scanning(), "no scan for a remembered glove")
 	advance(500)
 	assert_true(hub.is_hand_connected(H.LEFT), "direct connect")
 	hub.disconnect_hand(H.LEFT)
 	# The remembered glove is gone; a second glove for the same hand must not be taken.
-	hub.left.remember_device("AA:GONE")
+	hub.left_hand.remember_device("AA:GONE")
 	var other := sim.add_glove(HexRSimulatedGlove.new("BB:LEFT", HexRTypes.NAME_LEFT))
 	hub.connect_hand(H.LEFT)
 	advance(1000)
 	assert_true(sim.is_scanning() or hub.is_hand_connecting(H.LEFT), "fell back to a scan")
 	assert_false(other.connected, "did not take another left glove")
-	hub.left.forget_device()
+	hub.left_hand.forget_device()
 	hub.disconnect_hand(H.LEFT)
 	hub.connect_hand(H.LEFT)
 	advance(1000)
@@ -184,8 +184,8 @@ func test_watchdog_restarts_a_silent_attempt() -> void:
 	lg.connect_delay_ms = 25000  # the platform never answers within 20 s
 	hub.connect_hand(H.LEFT)
 	advance(20500, 50)
-	assert_true(hub.left.status_text.begins_with("Connection attempt timed out"),
-			"watchdog fired: " + hub.left.status_text)
+	assert_true(hub.left_hand.status_text.begins_with("Connection attempt timed out"),
+			"watchdog fired: " + hub.left_hand.status_text)
 	assert_true(hub.is_hand_connecting(H.LEFT), "retry scheduled")
 	lg.connect_delay_ms = 100
 	advance(5000, 50)
@@ -196,9 +196,9 @@ func test_pause_frame_is_release_all() -> void:
 	hub.connect_hand(H.LEFT)
 	advance(500)
 	assert_eq(sim.get_pause_release_frame("AA:LEFT").size(), 216, "release registered for pause")
-	hub.left.release_when_paused = false
+	hub.left_hand.release_when_paused = false
 	assert_eq(sim.get_pause_release_frame("AA:LEFT").size(), 0, "cleared when disabled")
-	hub.left.release_when_paused = true
+	hub.left_hand.release_when_paused = true
 	hub.disconnect_hand(H.LEFT)
 	assert_eq(sim.get_pause_release_frame("AA:LEFT").size(), 0, "cleared on disconnect")
 
@@ -206,16 +206,16 @@ func test_pause_frame_is_release_all() -> void:
 func test_pause_notification_releases() -> void:
 	hub.connect_hand(H.LEFT)
 	advance(500)
-	hub.left.bt_send(hub.left.haptics.hexr_vibration(F.PALM, true, 18.0, 0.8))
+	hub.left_hand.bt_send(hub.left_hand.haptics.hexr_vibration(F.PALM, true, 18.0, 0.8))
 	advance(200)
 	assert_true(lg.any_channel_on(), "palm vibrating")
-	hub.left.notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	hub.left_hand.notification(Node.NOTIFICATION_APPLICATION_PAUSED)
 	assert_false(lg.any_channel_on(), "released on pause")
 
 
 func test_commands_dropped_while_disconnected() -> void:
-	assert_false(hub.left.bt_send(PackedByteArray([1, 2, 3])), "refused")
-	assert_false(hub.left.coalescer.has_pending(), "not queued for later")
+	assert_false(hub.left_hand.bt_send(PackedByteArray([1, 2, 3])), "refused")
+	assert_false(hub.left_hand.coalescer.has_pending(), "not queued for later")
 
 
 func test_telemetry_and_battery() -> void:
@@ -224,10 +224,10 @@ func test_telemetry_and_battery() -> void:
 	lg.battery = 0.5
 	hub.connect_hand(H.LEFT)
 	advance(1500)
-	assert_almost(hub.left.get_battery_level(), 0.5, 1e-6, "battery read")
+	assert_almost(hub.left_hand.get_battery_level(), 0.5, 1e-6, "battery read")
 	assert_eq(states, [HaptGloveHandler.BatteryState.MEDIUM] as Array[int], "battery state")
-	assert_eq(hub.left.get_finger_positions(), lg.finger_position, "positions")
-	assert_almost(hub.left.get_air_pressure_kpa()[6], 80.0, 1e-4, "source pressure")
+	assert_eq(hub.left_hand.get_finger_position(), lg.finger_position, "positions")
+	assert_almost(hub.left_hand.get_air_pressure_kpa()[6], 80.0, 1e-4, "source pressure")
 	lg.battery = 0.1
 	advance(1500)
 	assert_eq(states.back(), HaptGloveHandler.BatteryState.LOW, "low battery")
@@ -247,7 +247,7 @@ func test_simulated_link_cut_to_mtu_23() -> void:
 	lg.mtu = 23
 	hub.connect_hand(H.LEFT)
 	advance(500)
-	hub.left.release_all_channels()
+	hub.left_hand.release_all_channels()
 	advance(200)
 	assert_eq(lg.dropped_long_writes, 0, "release cut into single-frame writes")
 	assert_eq(lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).size(), 6, "all pressure exits arrived")

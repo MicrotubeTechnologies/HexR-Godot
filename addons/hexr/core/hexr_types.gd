@@ -47,3 +47,20 @@ static func hand_from_device_name(device_name: String) -> int:
 	if tail.begins_with("right"):
 		return HaptGloveHandler.HandType.RIGHT
 	return -1
+
+
+static var _renamed_warned := {}
+
+
+## Warns once that a scene still uses a 0.1 property name. The components' _set() shims call it
+## while they map the old name onto the new one; HexR > Migration > Upgrade 0.1 scenes rewrites
+## the scene files for good.
+static func warn_renamed(owner: Object, old_name: String, new_name: String) -> void:
+	var cls: String = owner.get_script().get_global_name() if owner.get_script() else owner.get_class()
+	var key := "%s.%s" % [cls, old_name]
+	if _renamed_warned.has(key):
+		return
+	_renamed_warned[key] = true
+	push_warning("[HexR] %s.%s is now %s (HexR 0.2). Run HexR > Migration > Upgrade 0.1 scenes to update your scenes."
+			% [cls, old_name, new_name])
+

@@ -34,8 +34,8 @@ func tick_physics(n: int) -> void:
 
 func _finger(f: int, hand: int = H.LEFT) -> HapticFingerTrigger:
 	var tp := HapticFingerTrigger.new()
-	tp.hand = hand
-	tp.finger = f
+	tp.hand_type = hand
+	tp.finger_type = f
 	tp.collision_layer = 1 << 19
 	tp.collision_mask = 0
 	tp.monitoring = false

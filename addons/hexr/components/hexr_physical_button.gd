@@ -6,9 +6,16 @@ extends Area3D
 signal pressed
 signal released
 
+@export_group("Fingers that press it")
 ## Which fingers can press it. Index only is the predictable choice: a palm or a curled ring
 ## finger brushing past should not fire it.
-@export_flags("Thumb", "Index", "Middle", "Ring", "Pinky", "Palm") var fingers: int = 2
+@export var thumb := false
+@export var index := true
+@export var middle := false
+@export var ring := false
+@export var pinky := false
+@export var palm := false
+@export_group("")
 ## The part that visibly moves. Empty moves this node itself.
 @export var cap: Node3D
 ## How far the cap sinks, in metres, along [member press_direction].
@@ -42,8 +49,24 @@ func is_pressed() -> bool:
 	return _presser != null
 
 
+## Whether [param finger] (a [enum Haptics.Finger]) can press this button.
 func accepts(finger: int) -> bool:
-	return (fingers & (1 << finger)) != 0
+	return [thumb, index, middle, ring, pinky, palm][finger]
+
+
+# Scenes saved with HexR 0.1 store the fingers as one bitmask.
+func _set(property: StringName, value: Variant) -> bool:
+	if property != &"fingers":
+		return false
+	var mask := int(value)
+	thumb = mask & 1 != 0
+	index = mask & 2 != 0
+	middle = mask & 4 != 0
+	ring = mask & 8 != 0
+	pinky = mask & 16 != 0
+	palm = mask & 32 != 0
+	HexRTypes.warn_renamed(self, "fingers", "thumb/index/middle/ring/pinky/palm")
+	return true
 
 
 func _on_area_entered(area: Area3D) -> void:
@@ -51,7 +74,7 @@ func _on_area_entered(area: Area3D) -> void:
 	if _presser != null or now < _rearm_at or not (area is HapticFingerTrigger):
 		return
 	var tp := area as HapticFingerTrigger
-	if not accepts(tp.finger):
+	if not accepts(tp.finger_type):
 		return
 	_presser = tp
 	var c := cap if cap else self

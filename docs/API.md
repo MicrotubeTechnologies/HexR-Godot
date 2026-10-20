@@ -50,13 +50,14 @@ It survives scene changes, as autoloads do. Scenes bring their own rig (tracked 
 
 - **`transport: HexRBleTransport`**
 - **`device_store: HexRDeviceStore`**
-- **`left: HaptGloveHandler`**
-- **`right: HaptGloveHandler`**
+- **`left_hand: HaptGloveHandler`** — The gloves (Unity `leftHand` / `rightHand`).
+- **`right_hand: HaptGloveHandler`**
 - **`left_controller: PressureTrackerMain`** — The scene's Pressure Controllers, set when they enter the tree.
 - **`right_controller: PressureTrackerMain`**
-- **`left_hand: HexRTrackedHand`** — The scene's tracked hands, set when they enter the tree.
-- **`right_hand: HexRTrackedHand`**
+- **`left_tracked_hand: HexRTrackedHand`** — The scene's tracked hands, set when they enter the tree.
+- **`right_tracked_hand: HexRTrackedHand`**
 - **`drive_from_process := true`** — When false, nothing advances until `tick()` is called (tests drive time themselves).
+- **`static instance: HexRManager`** — The running HexR manager (Unity `HexRManager.Instance`): the HexR autoload, or one made current with `make_current()`. Null when there is none.
 
 ### Methods
 
@@ -67,6 +68,9 @@ It survives scene changes, as autoloads do. Scenes bring their own rig (tracked 
 - **`glove(hand: int) -> HaptGloveHandler`**
 - **`connect_hand(hand: int) -> void`** — Connects that hand's glove, asking for Bluetooth permission first where the platform needs it. Does nothing if it is connected or already connecting, so it is safe to call at any time.
 - **`disconnect_hand(hand: int) -> void`** — Releases every channel on that hand's glove and disconnects it, or cancels a connect in progress.
+- **`begin_connect(hand: int) -> void`** — Starts connecting that hand's glove, asking for Bluetooth permission first where the platform needs it (Unity `BeginConnect`). `connect_hand()` is the safe version: it does nothing for a glove that is connected or connecting.
+- **`connect_left_bt() -> void`** — What the menu's left glove button does: connect, cancel a connect in progress, or disconnect (Unity `ConnectLeftBT`).
+- **`connect_right_bt() -> void`** — What the menu's right glove button does (Unity `ConnectRightBT`).
 - **`toggle_hand(hand: int) -> void`** — What a menu's Connect button does: connect, cancel a connect in progress, or disconnect.
 - **`is_hand_connected(hand: int) -> bool`**
 - **`is_hand_connecting(hand: int) -> bool`** — True while waiting for permission, scanning, connecting or waiting to retry.
@@ -84,32 +88,32 @@ It survives scene changes, as autoloads do. Scenes bring their own rig (tracked 
 
 *extends `Node` · `addons/hexr/core/hapt_glove_handler.gd`*
 
-One glove: its Bluetooth connection, the commands sent to it and the readings it sends back. Port of the Unity package's HaptGloveHandler. Reach them as `HexR.left` and `HexR.right`.
+One glove: its Bluetooth connection, the commands sent to it and the readings it sends back. Port of the Unity package's HaptGloveHandler. Reach them as `HexR.left_hand` and `HexR.right_hand`.
 
-Connecting runs a campaign: it scans (or connects straight to the remembered glove), and when an attempt fails it retries after 1, 2, 4, 8, 8... seconds, giving up after 60 s. A glove that drops reopens a campaign by itself. Calling `connect_toggle()` while a campaign runs cancels it; on a connected glove it disconnects.
+Connecting runs a campaign: it scans (or connects straight to the remembered glove), and when an attempt fails it retries after 1, 2, 4, 8, 8... seconds, giving up after 60 s. A glove that drops reopens a campaign by itself. Calling `bt_connection()` while a campaign runs cancels it; on a connected glove it disconnects.
 
 Before the link closes, on pause and on quit, every channel is released: once disconnected the glove keeps whatever it was last told.
 
 ### Signals
 
-- **`bluetooth_connected`** — The link is up.
-- **`bluetooth_disconnected`** — The link went down, whether asked for or lost. `is_connecting()` tells them apart: it is true after a drop, because a reconnect campaign has started.
-- **`bluetooth_connection_failed`** — One connect attempt failed. More may follow; see `connect_campaign_ended`.
-- **`connect_campaign_ended`** — The connect campaign ended without a connection (gave up, cancelled or not permitted).
-- **`pump_changed(on: bool)`**
-- **`battery_state_changed(state: int)`**
-- **`device_found(id: String, device_name: String)`**
-- **`status_changed(text: String)`**
+- **`bluetooth_connected(hand: int)`** — The link is up (Unity `onBluetoothConnected`).
+- **`bluetooth_disconnected(hand: int)`** — The link went down, whether asked for or lost. `is_connecting()` tells them apart: it is true after a drop, because a reconnect campaign has started.
+- **`bluetooth_connection_failed(hand: int)`** — One connect attempt failed. More may follow; see `connect_campaign_ended`.
+- **`connect_campaign_ended(hand: int)`** — The connect campaign ended without a connection (gave up, cancelled or not permitted).
+- **`pump_changed(hand: int, on: bool)`** — The air pump started or stopped (Unity `onPumpAction`).
+- **`battery_state_changed(hand: int, state: int)`**
+- **`device_found(id: String, device_name: String)`** — A glove for this hand was seen during a scan (Unity `onDeviceFound`).
+- **`status_changed(hand: int, text: String)`** — `status_text` changed.
 
 ### Properties
 
-- **`hand: int = HaptGloveHandler.HandType.LEFT`** — Which hand this glove is.
+- **`which_hand: HandType = HandType.LEFT`** — Which hand this glove is.
 - **`haptics := Haptics.new()`** — Builds the commands and records the last one per channel.
 - **`decoder := HexRFrameDecoder.new()`** — The glove's latest readings.
 - **`coalescer := HexRWriteCoalescer.new()`** — Batches commands into at most one write per interval.
 - **`release_when_paused := true`** — Release every channel when the app is paused (on a headset, when it is taken off). A paused app cannot release anything itself, so without this the glove keeps pressing until it resumes.
-- **`use_custom_device_name := false`** — Match this advertised name instead of "HaptGloveAR Left/Right".
-- **`custom_device_name := ""`**
+- **`use_custom_device_name := false`** — Match `optional_custom_device_name` instead of "HaptGloveAR Left/Right".
+- **`optional_custom_device_name := ""`**
 - **`source_pressure := 80`** — Air source pressure sent with the pump command.
 - **`auto_start_pump := true`** — Send the pump command 2 s after connecting, as the Unity package does.
 - **`verbose := false`** — Log connection steps.
@@ -124,7 +128,9 @@ Before the link closes, on pause and on quit, every channel is released: once di
 - **`setup(p_hand: int, hub: Object, transport: HexRBleTransport, store: HexRDeviceStore) -> void`**
 - **`target_device_name() -> String`** — The advertised name this glove matches.
 - **`side() -> String`**
-- **`connect_toggle() -> void`** — Connects, cancels a campaign in progress, or disconnects, depending on the state. Prefer `HexRManager.connect_hand()`, which also asks for Bluetooth permission.
+- **`bt_connection() -> void`** — Connects, cancels a campaign in progress, or disconnects, depending on the state (Unity `BTConnection`). Prefer `HexRManager.connect_hand()`, which also asks for Bluetooth permission.
+- **`bt_disconnection() -> void`** — Releases every channel and closes the link, or stops a connect campaign in progress (Unity `BTDisconnection`). Does nothing when idle.
+- **`set_battery_level_update_interval(seconds: float) -> void`** — How often the battery level is checked, in seconds (Unity `SetBatteryLevelUpdateInterval`).
 - **`cancel_connect() -> void`** — Stops a connect campaign. Does nothing when connected or idle.
 - **`is_connecting() -> bool`** — True while a connect campaign is under way: scanning, connecting or waiting to retry.
 - **`get_remembered_device_id() -> String`**
@@ -140,7 +146,7 @@ Before the link closes, on pause and on quit, every channel is released: once di
 - **`get_battery_level() -> float`** — Battery as a 0..1 fraction; 0 until the glove reports it.
 - **`get_air_pressure() -> PackedInt32Array`** — Raw pressure readings as whole numbers (Thumb..Palm, then the air source), as the Unity package returns them.
 - **`get_air_pressure_kpa() -> PackedFloat32Array`** — Pressure readings in gauge kPa (Thumb..Palm, then the air source).
-- **`get_finger_positions() -> PackedInt32Array`** — Finger position sensor readings, Thumb..Pinky.
+- **`get_finger_position() -> PackedInt32Array`** — Finger position sensor readings, Thumb..Pinky.
 
 ### Enums
 
@@ -196,6 +202,7 @@ Wire-protocol constants and small helpers shared by the addon. The enums a game 
 - **`static finger_name(finger: int) -> String`**
 - **`static default_device_name(hand: int) -> String`**
 - **`static hand_from_device_name(device_name: String) -> int`** — Which hand an advertised name belongs to, or -1. The hand is carried only by the name; the command bytes are identical for both gloves.
+- **`static warn_renamed(owner: Object, old_name: String, new_name: String) -> void`** — Warns once that a scene still uses a 0.1 property name. The components' _set() shims call it while they map the old name onto the new one; HexR > Migration > Upgrade 0.1 scenes rewrites the scene files for good.
 
 ### Enums
 
@@ -263,7 +270,7 @@ It reads `XRHandTracker` directly (the standard OpenXR joints), so it works on M
 
 ### Inspector properties
 
-- **`hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
+- **`hand_type: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
 - **`tracker_name: StringName = &""`** — Leave empty for the standard OpenXR tracker (/user/hand_tracker/left or /right).
 - **`tip_radius := 0.008`**
 - **`tip_offsets: Array[Vector3] = []`** — Per finger, Thumb..Pinky. Empty uses the defaults for this hand.
@@ -306,8 +313,8 @@ func _on_area_entered(area: Area3D) -> void:
 
 ### Inspector properties
 
-- **`hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
-- **`finger: Haptics.Finger = Haptics.Finger.INDEX`**
+- **`hand_type: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
+- **`finger_type: Haptics.Finger = Haptics.Finger.INDEX`**
 
 ### Methods
 
@@ -356,12 +363,21 @@ Intensity is 0.1..1 (about 15..50 kPa). Components use a 10..60 strength scale; 
 
 ### Inspector properties
 
-- **`hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
+- **`hand_type: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
 
 ### Properties
 
 - **`hand_grabbing := false`** — Set by grab interactions (HexRGrabbable, the XR Tools binding).
 - **`poke_hovering := false`** — Set by poke interactions.
+- **`thumb_pressure: int`** — The glove's latest pressure readings, raw as the glove reports them, as in the Unity package (`HaptGloveHandler.get_air_pressure()`); 0 without a connected glove. Read-only. `get_pressures_kpa()` gives them in kPa.
+- **`index_pressure: int`**
+- **`middle_pressure: int`**
+- **`ring_pressure: int`**
+- **`little_pressure: int`**
+- **`palm_pressure: int`**
+- **`tank_pressure: int`**
+- **`glove_handler: HaptGloveHandler`** — This hand's glove (Unity `gloveHandler`), or null. Read-only.
+- **`collision_near_hand: bool`** — True while a ProximityCheck (or `is_physics_collision_near()`) holds this hand near (Unity `CollisionNearHand`). Read-only.
 
 ### Methods
 
@@ -396,7 +412,7 @@ Intensity is 0.1..1 (about 15..50 kPa). Components use a 10..60 strength scale; 
 - **`trigger_custom_vibrations(fingers_on: Array, intensity: float, frequency: float) -> void`**
 - **`remove_all_haptics() -> void`** — Releases every channel's pressure. Not gated by the hand-near check.
 - **`remove_all_vibrations() -> void`** — Stops every channel's vibration. Not gated by the hand-near check.
-- **`trigger_pulse_all(intensity: float = 0.3) -> void`** — One short pulse on every channel. Replaces the Unity package's TriggerPulseIt, which used a deprecated command.
+- **`trigger_pulse_it(intensity: float = 0.3) -> void`** — One short pulse on every channel (Unity `TriggerPulseIt`, which used a deprecated command; this sends one pulse per channel instead).
 - **`get_pressures_kpa() -> PackedFloat32Array`** — The glove's pressure readings in gauge kPa (Thumb..Palm, then the air source).
 
 ---
@@ -418,8 +434,8 @@ A pinch grab holds while the thumb and any other finger touch; a palm grab while
 
 ### Inspector properties
 
-- **`grab_type: GrabType = GrabType.PINCH`**
-- **`target: Node3D`** — The object that moves. Empty uses the parent.
+- **`type_of_grab: Options = Options.PINCH_GRAB`**
+- **`the_object: Node3D`** — The object that moves. Empty uses the parent.
 - **`gravity_on_release := true`** — Gravity on the object after it is let go (for a RigidBody3D).
 - **`haptic_strength := 10.0`** — How firmly each touching finger is pressed: 10 barely there, 60 firm, 0 no haptics.
 - **`open_hand_grace := 0.5`** — Seconds after grabbing before an open hand lets go.
@@ -432,7 +448,7 @@ A pinch grab holds while the thumb and any other finger touch; a palm grab while
 
 ### Enums
 
-- **`GrabType { PINCH, PALM }`**
+- **`Options { PINCH_GRAB, PALM_GRAB }`** — Unity's grab types.
 
 ## HexRPhysicalButton
 
@@ -447,7 +463,12 @@ A button pressed by a fingertip, with no interaction toolkit needed. The pressin
 
 ### Inspector properties
 
-- **`fingers: int = 2`** — Which fingers can press it. Index only is the predictable choice: a palm or a curled ring finger brushing past should not fire it.
+- **`thumb := false`** — Which fingers can press it. Index only is the predictable choice: a palm or a curled ring finger brushing past should not fire it.
+- **`index := true`**
+- **`middle := false`**
+- **`ring := false`**
+- **`pinky := false`**
+- **`palm := false`**
 - **`cap: Node3D`** — The part that visibly moves. Empty moves this node itself.
 - **`travel := 0.006`** — How far the cap sinks, in metres, along `press_direction`.
 - **`press_direction := Vector3.DOWN`** — Local direction the cap moves when pressed.
@@ -457,7 +478,7 @@ A button pressed by a fingertip, with no interaction toolkit needed. The pressin
 ### Methods
 
 - **`is_pressed() -> bool`**
-- **`accepts(finger: int) -> bool`**
+- **`accepts(finger: int) -> bool`** — Whether `finger` (a `Haptics.Finger`) can press this button.
 
 ## SpecialHaptics
 
@@ -465,7 +486,7 @@ A button pressed by a fingertip, with no interaction toolkit needed. The pressin
 
 A zone with a ready-made haptic effect for the fingers inside it (port of the Unity package's SpecialHaptics). Effects skip the hand-near check: being in the zone is enough.
 
-- Custom vibrations: touching fingers vibrate at `vibration_frequency`.
+- Custom vibrations: touching fingers vibrate at `vibrations_frequency_value`.
 - Custom haptics: touching fingers press at `haptic_pressure` (10..60).
 - Fountain: touching fingers vibrate at 18 Hz, as if under running water.
 - Rain drop: the palm gets random patterns of drops.
@@ -478,12 +499,12 @@ A zone with a ready-made haptic effect for the fingers inside it (port of the Un
 
 ### Inspector properties
 
-- **`effect: Effect = Effect.CUSTOM_HAPTICS`**
-- **`haptic_strength := 0.5`** — Intensity (0.1..1) for custom vibrations and rain drops.
-- **`vibration_frequency := 1.0`** — Custom vibrations frequency in Hz.
+- **`type_of_haptics: Options = Options.CUSTOM_VIBRATIONS`**
+- **`haptic_strength_value := 0.5`** — Intensity (0.1..1) for custom vibrations and rain drops.
+- **`vibrations_frequency_value := 1.0`** — Custom vibrations frequency in Hz.
 - **`haptic_pressure := 10.0`** — Custom haptics pressure on the 10..60 strength scale.
 - **`heart_beat_pressure := 0.5`** — Intensity (0.1..1) of each beat.
-- **`heart_beat: HeartBeat = HeartBeat.REGULAR`**
+- **`heartbeat: HeartBeat = HeartBeat.REGULAR`**
 - **`in_timer := 0.4`** — Seconds each beat presses, then rests (regular beats).
 - **`out_timer := 0.3`**
 - **`include_palm := false`** — Let the palm feel the beat too.
@@ -495,7 +516,7 @@ A zone with a ready-made haptic effect for the fingers inside it (port of the Un
 
 ### Enums
 
-- **`Effect { CUSTOM_VIBRATIONS, CUSTOM_HAPTICS, FOUNTAIN, RAIN_DROP, HEART_BEAT, HAND_SQUEEZE }`**
+- **`Options { CUSTOM_VIBRATIONS, CUSTOM_HAPTICS, FOUNTAIN_EFFECT, RAIN_DROP_EFFECT, HEART_BEAT_EFFECT, HAND_SQUEEZE_EFFECT }`** — Unity's effect types (the order is the same as the Unity package's).
 - **`HeartBeat { REGULAR, IRREGULAR }`**
 
 ## HexRUsable
@@ -513,7 +534,11 @@ The Unity component only looked at the last finger it checked; this one needs ev
 
 ### Inspector properties
 
-- **`fingers: int = 2`** — The fingers that have to curl.
+- **`thumb := true`** — The fingers that have to curl, all five by default as in the Unity package.
+- **`index_finger := true`**
+- **`middle_finger := true`**
+- **`ring_finger := true`**
+- **`little_finger := true`**
 - **`use_threshold := 0.3`** — 0 is fully curled, 1 fully extended. A finger counts as curled below this.
 
 ### Methods

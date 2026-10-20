@@ -109,7 +109,7 @@ func _editor_hub() -> HexRManager:
 		_hub = HexRManager.new()
 		_hub.drive_from_process = false
 		_hub.setup(HexRBleTransport.create(), HexRDeviceStore.new())
-		for g in [_hub.left, _hub.right]:
+		for g in [_hub.left_hand, _hub.right_hand]:
 			g.verbose = true
 	return _hub
 

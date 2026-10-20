@@ -12,24 +12,24 @@ func _ready() -> void:
 		if find_hand(hand) == null:
 			var h := HexRTrackedHand.new()
 			h.name = side + "Hand"
-			h.hand = hand
+			h.hand_type = hand
 			add_child(h)
 		if find_controller(hand) == null:
 			var c := PressureTrackerMain.new()
 			c.name = side + "PressureController"
-			c.hand = hand
+			c.hand_type = hand
 			add_child(c)
 
 
 func find_hand(hand: int) -> HexRTrackedHand:
 	for c in get_children():
-		if c is HexRTrackedHand and c.hand == hand:
+		if c is HexRTrackedHand and c.hand_type == hand:
 			return c
 	return null
 
 
 func find_controller(hand: int) -> PressureTrackerMain:
 	for c in get_children():
-		if c is PressureTrackerMain and c.hand == hand:
+		if c is PressureTrackerMain and c.hand_type == hand:
 			return c
 	return null
