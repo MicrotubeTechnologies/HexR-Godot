@@ -2,8 +2,8 @@ extends Control
 ## Bluetooth smoke test: connect each glove, press each channel, watch its readings.
 ## Runs as a flat panel app on a headset (no XR needed), and on the desktop.
 
-const F := HexRTypes.Finger
-const H := HexRTypes.Hand
+const F := Haptics.Finger
+const H := HaptGloveHandler.HandType
 
 var _labels := {}
 var _log: RichTextLabel

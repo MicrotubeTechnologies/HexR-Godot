@@ -2,7 +2,7 @@ extends HexRTest
 ## The bytes the glove receives. Reference frames come from the HexR Companion's tests and from
 ## the Unity package; golden_frames.json is a float32 sweep from tools/gen_golden_frames.py.
 
-const F := HexRTypes.Finger
+const F := Haptics.Finger
 
 
 func test_reference_frames() -> void:
@@ -65,8 +65,8 @@ func test_release_all_matches_unity_layout() -> void:
 	var frames := HexRFrames.split_frames(rel)
 	assert_eq(frames.size(), 12, "release-all frame count")
 	for ch in 6:
-		assert_eq(frames[ch * 2][1], HexRTypes.Op.SET_VIBRATION, "vibration exit first for channel %d" % ch)
-		assert_eq(frames[ch * 2 + 1][1], HexRTypes.Op.SET_PRESSURE, "then pressure exit for channel %d" % ch)
+		assert_eq(frames[ch * 2][1], Haptics.FunIndex.FI_SET_VIBRATION, "vibration exit first for channel %d" % ch)
+		assert_eq(frames[ch * 2 + 1][1], Haptics.FunIndex.FI_SET_PRESSURE, "then pressure exit for channel %d" % ch)
 		assert_eq(frames[ch * 2][10], HexRTypes.STATE_EXIT, "exit state")
 
 
@@ -109,29 +109,29 @@ func test_multi_concatenates() -> void:
 
 func test_channel_log() -> void:
 	var h := Haptics.new()
-	assert_eq(h.get_channel_state(F.INDEX).mode, HexRTypes.HapticMode.OFF, "starts off")
+	assert_eq(h.get_channel_state(F.INDEX).mode, Haptics.HapticMode.OFF, "starts off")
 	h.hexr_pressure(F.INDEX, true, 0.8, 1.0)
 	var s := h.get_channel_state(F.INDEX)
-	assert_eq(s.mode, HexRTypes.HapticMode.PRESSURE, "pressure on")
+	assert_eq(s.mode, Haptics.HapticMode.PRESSURE, "pressure on")
 	assert_almost(s.intensity, 0.8, 1e-6, "intensity recorded")
 	assert_eq(h.get_activation_count(F.INDEX), 1, "one activation")
 	h.hexr_pressure(F.INDEX, true, 0.8, 1.0)
 	assert_eq(h.get_activation_count(F.INDEX), 2, "repeat counts")
 	h.hexr_pressure(F.INDEX, false, 0.0, 1.0)
-	assert_eq(h.get_channel_state(F.INDEX).mode, HexRTypes.HapticMode.OFF, "released")
-	assert_eq(h.get_last_active_state(F.INDEX).mode, HexRTypes.HapticMode.PRESSURE, "last active kept")
+	assert_eq(h.get_channel_state(F.INDEX).mode, Haptics.HapticMode.OFF, "released")
+	assert_eq(h.get_last_active_state(F.INDEX).mode, Haptics.HapticMode.PRESSURE, "last active kept")
 	h.hexr_vibration(F.PALM, true, 18.0, 0.7)
-	assert_eq(h.get_channel_state(F.PALM).mode, HexRTypes.HapticMode.VIBRATION, "vibration")
+	assert_eq(h.get_channel_state(F.PALM).mode, Haptics.HapticMode.VIBRATION, "vibration")
 	assert_almost(h.get_channel_state(F.PALM).frequency, 18.0, 1e-6, "frequency")
 	h.hexr_pulse(F.RING, true, 3.0, 0.5, 4)
-	assert_eq(h.get_channel_state(F.RING).mode, HexRTypes.HapticMode.PULSE, "pulse")
+	assert_eq(h.get_channel_state(F.RING).mode, Haptics.HapticMode.PULSE, "pulse")
 	h.build_release()
 	for f in 6:
-		assert_eq(h.get_channel_state(f).mode, HexRTypes.HapticMode.OFF, "release turns channel %d off" % f)
+		assert_eq(h.get_channel_state(f).mode, Haptics.HapticMode.OFF, "release turns channel %d off" % f)
 
 
 func test_hand_from_device_name() -> void:
-	assert_eq(HexRTypes.hand_from_device_name("HaptGloveAR Left"), HexRTypes.Hand.LEFT, "left")
-	assert_eq(HexRTypes.hand_from_device_name(" HaptGloveAR Right "), HexRTypes.Hand.RIGHT, "right")
+	assert_eq(HexRTypes.hand_from_device_name("HaptGloveAR Left"), HaptGloveHandler.HandType.LEFT, "left")
+	assert_eq(HexRTypes.hand_from_device_name(" HaptGloveAR Right "), HaptGloveHandler.HandType.RIGHT, "right")
 	assert_eq(HexRTypes.hand_from_device_name("HaptGloveAR"), -1, "no hand")
 	assert_eq(HexRTypes.hand_from_device_name("Pixel Buds"), -1, "other device")

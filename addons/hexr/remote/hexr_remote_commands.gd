@@ -69,7 +69,7 @@ func _release(req: Dictionary) -> String:
 	var only := HexRRemoteProtocol.parse_hand(req["hand"])
 	if not any_hand and only < 0:
 		return "Say which glove: \"left\", \"right\", or neither for both."
-	for hand in [HexRTypes.Hand.LEFT, HexRTypes.Hand.RIGHT]:
+	for hand in [HaptGloveHandler.HandType.LEFT, HaptGloveHandler.HandType.RIGHT]:
 		if not any_hand and hand != only:
 			continue
 		var g := hub.glove(hand)
@@ -117,7 +117,7 @@ func _stream_request(req: Dictionary) -> String:
 ## Both gloves' status lines, left then right.
 static func glove_status(hub: HexRManager) -> Array:
 	var out := []
-	for hand in [HexRTypes.Hand.LEFT, HexRTypes.Hand.RIGHT]:
+	for hand in [HaptGloveHandler.HandType.LEFT, HaptGloveHandler.HandType.RIGHT]:
 		var side := HexRRemoteProtocol.hand_name(hand)
 		if hub == null or hub.glove(hand) == null:
 			out.append(HexRRemoteProtocol.glove_status(side))

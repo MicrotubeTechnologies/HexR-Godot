@@ -58,7 +58,7 @@ func grabbing_hand() -> int:
 
 
 func _anchor_finger() -> int:
-	return HexRTypes.Finger.THUMB if grab_type == GrabType.PINCH else HexRTypes.Finger.PALM
+	return Haptics.Finger.THUMB if grab_type == GrabType.PINCH else Haptics.Finger.PALM
 
 
 func _physics_process(delta: float) -> void:
@@ -71,7 +71,7 @@ func _physics_process(delta: float) -> void:
 
 	if _grab_hand < 0:
 		# Right hand first, as in the Unity package.
-		for hand in [HexRTypes.Hand.RIGHT, HexRTypes.Hand.LEFT]:
+		for hand in [HaptGloveHandler.HandType.RIGHT, HaptGloveHandler.HandType.LEFT]:
 			if touching[hand][anchor_finger] != null and _another_finger(touching[hand]):
 				_grab(hand, touching[hand][anchor_finger])
 				break
@@ -95,8 +95,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _another_finger(row: Array) -> bool:
-	return row[HexRTypes.Finger.INDEX] != null or row[HexRTypes.Finger.MIDDLE] != null \
-			or row[HexRTypes.Finger.RING] != null or row[HexRTypes.Finger.PINKY] != null
+	return row[Haptics.Finger.INDEX] != null or row[Haptics.Finger.MIDDLE] != null \
+			or row[Haptics.Finger.RING] != null or row[Haptics.Finger.PINKY] != null
 
 
 func _grab(hand: int, anchor: HapticFingerTrigger) -> void:

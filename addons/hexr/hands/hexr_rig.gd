@@ -7,7 +7,7 @@ extends Node3D
 
 
 func _ready() -> void:
-	for hand in [HexRTypes.Hand.LEFT, HexRTypes.Hand.RIGHT]:
+	for hand in [HaptGloveHandler.HandType.LEFT, HaptGloveHandler.HandType.RIGHT]:
 		var side := HexRTypes.hand_name(hand)
 		if find_hand(hand) == null:
 			var h := HexRTrackedHand.new()

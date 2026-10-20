@@ -48,11 +48,11 @@ the glove, the HexR Tester and the HexR Companion behave the same with Godot app
 ## 🧤 Using it
 
 ```gdscript
-HexR.connect_hand(HexRTypes.Hand.LEFT)            # asks for Bluetooth permission where needed
+HexR.connect_hand(HaptGloveHandler.HandType.LEFT)            # asks for Bluetooth permission where needed
 
-var hand := HexR.controller(HexRTypes.Hand.LEFT)  # the scene's Pressure Controller
-hand.custom_single_haptics(HexRTypes.Finger.INDEX, true, 0.8, 1.0, true)
-hand.custom_single_vibrations(HexRTypes.Finger.PALM, true, 0.7, 18.0, true)
+var hand := HexR.controller(HaptGloveHandler.HandType.LEFT)  # the scene's Pressure Controller
+hand.custom_single_haptics(Haptics.Finger.INDEX, true, 0.8, 1.0, true)
+hand.custom_single_vibrations(Haptics.Finger.PALM, true, 0.7, 18.0, true)
 HexR.left.release_all_channels()
 ```
 

@@ -12,6 +12,12 @@ extends Node
 ## Before the link closes, on pause and on quit, every channel is released: once disconnected
 ## the glove keeps whatever it was last told.
 
+## Which hand a glove, controller or touch point belongs to.
+enum HandType { LEFT, RIGHT }
+
+## The glove's battery, from its battery level.
+enum BatteryState { FULL, MEDIUM, LOW }
+
 ## The link is up.
 signal bluetooth_connected
 ## The link went down, whether asked for or lost. [method is_connecting] tells them apart: it is
@@ -36,7 +42,7 @@ const BATTERY_CHECK_MS := 1000
 const TELEMETRY_MIN_MTU := 77
 
 ## Which hand this glove is.
-var hand: int = HexRTypes.Hand.LEFT
+var hand: int = HaptGloveHandler.HandType.LEFT
 ## Builds the commands and records the last one per channel.
 var haptics := Haptics.new()
 ## The glove's latest readings.
@@ -68,7 +74,7 @@ var device_id := ""
 var mtu := 0
 ## Human-readable connection status, for menus.
 var status_text := ""
-var battery_state: int = HexRTypes.BatteryState.FULL
+var battery_state: int = HaptGloveHandler.BatteryState.FULL
 
 var _transport: HexRBleTransport
 var _store: HexRDeviceStore
@@ -382,11 +388,11 @@ func _check_battery() -> void:
 	var level := decoder.battery
 	var state: int
 	if level >= 1.0:
-		state = HexRTypes.BatteryState.FULL
+		state = HaptGloveHandler.BatteryState.FULL
 	elif level >= 0.2:
-		state = HexRTypes.BatteryState.MEDIUM
+		state = HaptGloveHandler.BatteryState.MEDIUM
 	else:
-		state = HexRTypes.BatteryState.LOW
+		state = HaptGloveHandler.BatteryState.LOW
 	if not _battery_known or state != battery_state:
 		_battery_known = true
 		battery_state = state

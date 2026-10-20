@@ -36,7 +36,7 @@ const DEFAULT_TIP_OFFSETS_RIGHT: Array[Vector3] = [
 	Vector3(0.0013, -0.0054, 0.0055), Vector3(0.0012, -0.0060, 0.0070),
 ]
 
-@export var hand: HexRTypes.Hand = HexRTypes.Hand.LEFT
+@export var hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT
 ## Leave empty for the standard OpenXR tracker (/user/hand_tracker/left or /right).
 @export var tracker_name: StringName = &""
 @export var tip_radius := 0.008
@@ -52,7 +52,7 @@ const DEFAULT_TIP_OFFSETS_RIGHT: Array[Vector3] = [
 		show_touch_points = v
 		_update_debug_meshes()
 
-## The six touch points, indexed by [enum HexRTypes.Finger].
+## The six touch points, indexed by [enum Haptics.Finger].
 var touch_points: Array[HapticFingerTrigger] = []
 var finger_use := FingerUseTracking.new()
 ## True while the tracker reports this hand.
@@ -77,7 +77,7 @@ func _exit_tree() -> void:
 func get_tracker_name() -> StringName:
 	if tracker_name != &"":
 		return tracker_name
-	return &"/user/hand_tracker/left" if hand == HexRTypes.Hand.LEFT else &"/user/hand_tracker/right"
+	return &"/user/hand_tracker/left" if hand == HaptGloveHandler.HandType.LEFT else &"/user/hand_tracker/right"
 
 
 func get_tracker() -> XRHandTracker:
@@ -101,7 +101,7 @@ func is_joint_valid(joint: int) -> bool:
 func _build_touch_points() -> void:
 	if not touch_points.is_empty():
 		return
-	var offsets := tip_offsets if tip_offsets.size() == 5 else (DEFAULT_TIP_OFFSETS_LEFT if hand == HexRTypes.Hand.LEFT else DEFAULT_TIP_OFFSETS_RIGHT)
+	var offsets := tip_offsets if tip_offsets.size() == 5 else (DEFAULT_TIP_OFFSETS_LEFT if hand == HaptGloveHandler.HandType.LEFT else DEFAULT_TIP_OFFSETS_RIGHT)
 	for f in 6:
 		var tp := HapticFingerTrigger.new()
 		tp.hand = hand
@@ -112,7 +112,7 @@ func _build_touch_points() -> void:
 		tp.monitoring = false
 		tp.monitorable = false
 		var shape := CollisionShape3D.new()
-		if f == HexRTypes.Finger.PALM:
+		if f == Haptics.Finger.PALM:
 			var box := BoxShape3D.new()
 			box.size = palm_size
 			shape.shape = box

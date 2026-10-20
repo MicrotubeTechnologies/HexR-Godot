@@ -2,8 +2,8 @@ extends HexRTest
 ## Touch points on an injected OpenXR hand tracker, and the components they drive, through real
 ## physics overlaps and the simulated glove.
 
-const F := HexRTypes.Finger
-const H := HexRTypes.Hand
+const F := Haptics.Finger
+const H := HaptGloveHandler.HandType
 
 var hub: HexRManager
 var sim: HexRSimulatedTransport
@@ -122,17 +122,17 @@ func test_physical_button_presses_the_finger() -> void:
 	button.pressed.connect(func() -> void: presses.append(1))
 	_zone_at(button, _tip(F.INDEX) + Vector3(0, 0, -0.3), 0.02)  # out of reach to start
 	await wait_physics(2)
-	var before := lg.frames_with_op(HexRTypes.Op.SET_PRESSURE).size()
+	var before := lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).size()
 	button.position = _tip(F.INDEX)
 	await wait_physics(3)
 	assert_eq(presses.size(), 1, "pressed once")
-	var frames := lg.frames_with_op(HexRTypes.Op.SET_PRESSURE)
+	var frames := lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE)
 	assert_true(frames.size() > before, "a pressure frame reached the glove")
 	assert_eq(frames.back()[8], F.INDEX, "on the index channel")
 	assert_eq(frames.back()[10], HexRTypes.STATE_ENTER, "pressing")
 	button.position += Vector3(0, 0, -0.3)
 	await wait_physics(3)
-	assert_eq(lg.frames_with_op(HexRTypes.Op.SET_PRESSURE).back()[10], HexRTypes.STATE_EXIT, "released on exit")
+	assert_eq(lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).back()[10], HexRTypes.STATE_EXIT, "released on exit")
 
 
 func test_physical_button_ignores_other_fingers() -> void:
@@ -151,14 +151,14 @@ func test_proximity_opens_hand_near_check() -> void:
 	_zone_at(zone, _tip(F.MIDDLE), 0.05)
 	await wait_physics(3)
 	assert_true(c.is_hand_near(), "near while touching")
-	var before := lg.frames_with_op(HexRTypes.Op.SET_PRESSURE).size()
+	var before := lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).size()
 	c.single_index_haptic(0.7)
-	assert_eq(lg.frames_with_op(HexRTypes.Op.SET_PRESSURE).size(), before + 1, "gated call goes through when near")
+	assert_eq(lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).size(), before + 1, "gated call goes through when near")
 	zone.position += Vector3(0, 2, 0)
 	await wait_physics(8)
 	assert_false(c.is_hand_near(), "not near once gone")
 	c.single_index_haptic(0.7)
-	assert_eq(lg.frames_with_op(HexRTypes.Op.SET_PRESSURE).size(), before + 1, "gated call is dropped when not near")
+	assert_eq(lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).size(), before + 1, "gated call is dropped when not near")
 
 
 func test_special_haptics_fountain_vibrates_and_stops() -> void:
@@ -167,7 +167,7 @@ func test_special_haptics_fountain_vibrates_and_stops() -> void:
 	_zone_at(zone, _tip(F.INDEX), 0.015)
 	await wait_physics(30)
 	assert_true(lg.vibrating[F.INDEX], "index vibrating in the fountain")
-	var vib := lg.frames_with_op(HexRTypes.Op.SET_VIBRATION)
+	var vib := lg.frames_with_op(Haptics.FunIndex.FI_SET_VIBRATION)
 	assert_almost(vib.back().decode_float(3), 18.0, 1e-4, "at 18 Hz")
 	zone.position += Vector3(0, 2, 0)
 	await wait_physics(30)

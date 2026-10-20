@@ -2,7 +2,7 @@ extends HexRTest
 ## HexR Remote over real sockets on this machine: discovery, the welcome, status, requests,
 ## refusals while paused, the line-length cut-off and port fallback.
 
-const H := HexRTypes.Hand
+const H := HaptGloveHandler.HandType
 const BASE_PORT := 48801
 const DISCOVERY := 48800
 
@@ -141,7 +141,7 @@ func test_glove_connect_from_a_phone() -> void:
 		return d.get("type") == "status" and d["gloves"][0]["state"] == "connected", 5000)
 	assert_false(connected.is_empty(), "status reports the left glove connected")
 	assert_true(hub.is_hand_connected(H.LEFT), "really connected")
-	hub.left.bt_send(hub.left.haptics.hexr_pressure(HexRTypes.Finger.INDEX, true, 0.8, 1.0))
+	hub.left.bt_send(hub.left.haptics.hexr_pressure(Haptics.Finger.INDEX, true, 0.8, 1.0))
 	var press := await wait_for(phone, func(d: Dictionary) -> bool: return d.get("type") == "haptics" and d["hand"] == "left")
 	assert_eq([int(press["channels"][0]["finger"]), press["channels"][0]["mode"], int(press["channels"][0]["intensityPct"])],
 			[1, "pressure", 80], "the phone saw the press")

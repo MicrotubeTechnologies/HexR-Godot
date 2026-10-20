@@ -10,24 +10,40 @@ extends RefCounted
 ## Intensity is 0.1..1 and maps linearly to 15..50 kPa. Speed is 0.1..1, the ramp rate.
 ## Out-of-range values are clamped, not rejected.
 
-const Finger := HexRTypes.Finger
-const Mode := HexRTypes.HapticMode
-const Op := HexRTypes.Op
+## Haptic channels in wire order (the channel byte, 0..5).
+enum Finger { THUMB, INDEX, MIDDLE, RING, PINKY, PALM }
+
+## What a channel was last told to do.
+enum HapticMode { OFF, PRESSURE, VIBRATION, PULSE }
+
+## Outbound function indices (app to glove), as the Unity package names them.
+enum FunIndex {
+	FI_AIR_PRESSURE = 0x01,
+	FI_STABLE_PRESSURE_CTRL = 0x02,
+	FI_SET_PRESSURE_DEPRECATED = 0x03,
+	FI_SET_PRESSURE = 0x04,
+	FI_SET_PID = 0x05,
+	FI_SET_BATTERY_LED = 0x06,
+	FI_SET_VIBRATION = 0x07,
+	FI_SET_PULSE = 0x08,
+	FI_SET_VIB_SPEED = 0x09,
+	FI_SET_PULSE_SPEED = 0x0A,
+}
 
 
 ## The last command sent to one channel.
 class ChannelState:
-	var mode: int = HexRTypes.HapticMode.OFF
+	var mode: int = Haptics.HapticMode.OFF
 	var intensity: float = 0.0
 	var frequency: float = 0.0
 
-	func _init(p_mode: int = HexRTypes.HapticMode.OFF, p_intensity: float = 0.0, p_frequency: float = 0.0) -> void:
+	func _init(p_mode: int = Haptics.HapticMode.OFF, p_intensity: float = 0.0, p_frequency: float = 0.0) -> void:
 		mode = p_mode
 		intensity = p_intensity
 		frequency = p_frequency
 
 	func is_on() -> bool:
-		return mode != HexRTypes.HapticMode.OFF
+		return mode != Haptics.HapticMode.OFF
 
 	func equals(other: ChannelState) -> bool:
 		return other != null and mode == other.mode and is_equal_approx(intensity, other.intensity) \
@@ -117,8 +133,8 @@ func hexr_pressure(finger: int, on: bool, intensity: float, speed: float = 1.0) 
 	payload.append_array(HexRTlv.u8(_state_byte(on)))
 	payload.append_array(HexRTlv.f32(kpa))
 	payload.append_array(HexRTlv.u8(_speed_byte(speed)))
-	_record(finger, ChannelState.new(Mode.PRESSURE, intensity, 0.0) if on else ChannelState.new())
-	return HexRTlv.frame(Op.SET_PRESSURE, payload)
+	_record(finger, ChannelState.new(HapticMode.PRESSURE, intensity, 0.0) if on else ChannelState.new())
+	return HexRTlv.frame(FunIndex.FI_SET_PRESSURE, payload)
 
 
 ## [method hexr_pressure] for several channels, concatenated into one write.
@@ -139,8 +155,8 @@ func hexr_vibration(finger: int, on: bool, frequency: float, intensity: float) -
 	payload.append_array(HexRTlv.u8(_state_byte(on)))
 	payload.append_array(HexRTlv.f32(pk[0]))
 	payload.append_array(HexRTlv.u8(pk[1]))
-	_record(finger, ChannelState.new(Mode.VIBRATION, HexRF32.r(intensity), frequency) if on else ChannelState.new())
-	return HexRTlv.frame(Op.SET_VIBRATION, payload)
+	_record(finger, ChannelState.new(HapticMode.VIBRATION, HexRF32.r(intensity), frequency) if on else ChannelState.new())
+	return HexRTlv.frame(FunIndex.FI_SET_VIBRATION, payload)
 
 
 ## [method hexr_vibration] for several channels, concatenated into one write.
@@ -167,8 +183,8 @@ func hexr_vibration_ramped(finger: int, on: bool, frequency: float, intensity: f
 	payload.append_array(HexRTlv.u8(peak))
 	payload.append_array(HexRTlv.u8(_speed_byte(speed)))
 	payload.append_array(HexRTlv.f32(_end_kpa(end_intensity)))
-	_record(finger, ChannelState.new(Mode.VIBRATION, intensity, frequency) if on else ChannelState.new())
-	return HexRTlv.frame(Op.SET_VIB_SPEED, payload)
+	_record(finger, ChannelState.new(HapticMode.VIBRATION, intensity, frequency) if on else ChannelState.new())
+	return HexRTlv.frame(FunIndex.FI_SET_VIB_SPEED, payload)
 
 
 ## A counted burst of pulses (function 0x08). [param frequency]: 0.1..40 Hz.
@@ -182,8 +198,8 @@ func hexr_pulse(finger: int, on: bool, frequency: float, intensity: float, pulse
 	payload.append_array(HexRTlv.f32(pk[0]))
 	payload.append_array(HexRTlv.u8(pk[1]))
 	payload.append_array(HexRTlv.u16(clampi(pulse_count, 1, 1000)))
-	_record(finger, ChannelState.new(Mode.PULSE, HexRF32.r(intensity), frequency) if on else ChannelState.new())
-	return HexRTlv.frame(Op.SET_PULSE, payload)
+	_record(finger, ChannelState.new(HapticMode.PULSE, HexRF32.r(intensity), frequency) if on else ChannelState.new())
+	return HexRTlv.frame(FunIndex.FI_SET_PULSE, payload)
 
 
 ## A counted burst of shaped low-frequency pulses (function 0x0A). [param frequency]: 0.1..2 Hz.
@@ -201,8 +217,8 @@ func hexr_pulse_ramped(finger: int, on: bool, frequency: float, intensity: float
 	payload.append_array(HexRTlv.u16(clampi(pulse_count, 1, 1000)))
 	payload.append_array(HexRTlv.u8(_speed_byte(speed)))
 	payload.append_array(HexRTlv.f32(_end_kpa(end_intensity)))
-	_record(finger, ChannelState.new(Mode.PULSE, intensity, frequency) if on else ChannelState.new())
-	return HexRTlv.frame(Op.SET_PULSE_SPEED, payload)
+	_record(finger, ChannelState.new(HapticMode.PULSE, intensity, frequency) if on else ChannelState.new())
+	return HexRTlv.frame(FunIndex.FI_SET_PULSE_SPEED, payload)
 
 
 ## Releases [param fingers] on both paths: a vibration exit, then a pressure exit, per channel.
@@ -221,7 +237,7 @@ func build_release(fingers: Array = HexRTypes.ALL_FINGERS) -> PackedByteArray:
 static func pump_control(start: bool, source_kpa: int = 80) -> PackedByteArray:
 	var payload := HexRTlv.u8(1 if start else 0)
 	payload.append_array(HexRTlv.u8(source_kpa if start else 0))
-	return HexRTlv.frame(Op.STABLE_PRESSURE_CTRL, payload)
+	return HexRTlv.frame(FunIndex.FI_STABLE_PRESSURE_CTRL, payload)
 
 
 ## PID gains for every channel's pressure loop (function 0x05). Changing them changes how
@@ -230,4 +246,4 @@ static func set_pid(kp: float, ki: float, kd: float) -> PackedByteArray:
 	var payload := HexRTlv.f32(kp)
 	payload.append_array(HexRTlv.f32(ki))
 	payload.append_array(HexRTlv.f32(kd))
-	return HexRTlv.frame(Op.SET_PID, payload)
+	return HexRTlv.frame(FunIndex.FI_SET_PID, payload)

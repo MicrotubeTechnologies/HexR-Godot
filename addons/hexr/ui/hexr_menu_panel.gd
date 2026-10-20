@@ -67,7 +67,7 @@ func _ready() -> void:
 
 	var gloves := HBoxContainer.new()
 	gloves.add_theme_constant_override("separation", 14)
-	for hand in [HexRTypes.Hand.LEFT, HexRTypes.Hand.RIGHT]:
+	for hand in [HaptGloveHandler.HandType.LEFT, HaptGloveHandler.HandType.RIGHT]:
 		gloves.add_child(_glove_card(hand))
 	col.add_child(gloves)
 
@@ -126,11 +126,11 @@ func _process(_delta: float) -> void:
 				var s := g.haptics.get_channel_state(f)
 				var cell: Label = _cells[hand][f]
 				match s.mode:
-					HexRTypes.HapticMode.PRESSURE:
+					Haptics.HapticMode.PRESSURE:
 						cell.text = "%d" % roundi(s.intensity * 100.0)
-					HexRTypes.HapticMode.VIBRATION:
+					Haptics.HapticMode.VIBRATION:
 						cell.text = str(snappedf(s.frequency, 0.1)) + " Hz"
-					HexRTypes.HapticMode.PULSE:
+					Haptics.HapticMode.PULSE:
 						cell.text = "pulse"
 					_:
 						cell.text = "·"
@@ -199,7 +199,7 @@ func _readout() -> Control:
 		grid.add_child(h)
 	for hand in 2:
 		var side := Label.new()
-		side.text = "L" if hand == HexRTypes.Hand.LEFT else "R"
+		side.text = "L" if hand == HaptGloveHandler.HandType.LEFT else "R"
 		side.add_theme_font_override("font", _font("Archivo-Bold"))
 		grid.add_child(side)
 		for f in 6:

@@ -71,9 +71,9 @@ func _hand_of_holder() -> int:
 	if controller is XRController3D:
 		var tracker := String((controller as XRController3D).tracker)
 		if tracker.contains("left"):
-			return HexRTypes.Hand.LEFT
+			return HaptGloveHandler.HandType.LEFT
 		if tracker.contains("right"):
-			return HexRTypes.Hand.RIGHT
+			return HaptGloveHandler.HandType.RIGHT
 	return -1
 
 

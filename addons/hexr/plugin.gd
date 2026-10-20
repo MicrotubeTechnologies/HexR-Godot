@@ -101,7 +101,7 @@ func _create_rig() -> void:
 	rig.name = "HexRRig"
 	ur.add_do_method(origin, "add_child", rig, true)
 	ur.add_do_method(rig, "set_owner", root)
-	for hand in [HexRTypes.Hand.LEFT, HexRTypes.Hand.RIGHT]:
+	for hand in [HaptGloveHandler.HandType.LEFT, HaptGloveHandler.HandType.RIGHT]:
 		var side := HexRTypes.hand_name(hand)
 		var h := HexRTrackedHand.new()
 		h.name = side + "Hand"

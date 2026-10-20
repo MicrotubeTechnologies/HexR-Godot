@@ -245,7 +245,7 @@ def render(classes: dict[str, GdClass], version: str) -> str:
         "edit those, not this file. The same text is in Godot's built-in help: press **F1** in the",
         "editor and search for `HexR`.",
         "",
-        "Hands and fingers are the `HexRTypes.Hand` and `HexRTypes.Finger` enums (`int` in",
+        "Hands and fingers are the `HaptGloveHandler.HandType` and `Haptics.Finger` enums (`int` in",
         "signatures). Intensities are 0.1–1 (about 15–50 kPa); frequencies are in Hz.",
         "",
         "## Contents",

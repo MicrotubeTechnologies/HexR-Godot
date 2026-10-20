@@ -4,9 +4,9 @@ extends Node
 ## Pressure Controllers. Port of the Unity package's HexRManager.
 ##
 ## [codeblock]
-## HexR.connect_hand(HexRTypes.Hand.LEFT)
+## HexR.connect_hand(HaptGloveHandler.HandType.LEFT)
 ## HexR.glove_connected.connect(func(hand): print(HexRTypes.hand_name(hand), " connected"))
-## HexR.controller(HexRTypes.Hand.LEFT).single_index_haptic(0.8)
+## HexR.controller(HaptGloveHandler.HandType.LEFT).single_index_haptic(0.8)
 ## [/codeblock]
 ##
 ## It survives scene changes, as autoloads do. Scenes bring their own rig (tracked hands and
@@ -128,8 +128,8 @@ func setup(p_transport: HexRBleTransport, store: HexRDeviceStore) -> void:
 	transport = p_transport
 	device_store = store
 	if left == null:
-		left = _make_glove(HexRTypes.Hand.LEFT)
-		right = _make_glove(HexRTypes.Hand.RIGHT)
+		left = _make_glove(HaptGloveHandler.HandType.LEFT)
+		right = _make_glove(HaptGloveHandler.HandType.RIGHT)
 	for g in [left, right]:
 		g.setup(g.hand, self, transport, store)
 	transport.device_found.connect(_on_device_found)
@@ -183,7 +183,7 @@ func tick(now_ms: int) -> void:
 # -- connecting -----------------------------------------------------------------------------
 
 func glove(hand: int) -> HaptGloveHandler:
-	return left if hand == HexRTypes.Hand.LEFT else right
+	return left if hand == HaptGloveHandler.HandType.LEFT else right
 
 
 ## Connects that hand's glove, asking for Bluetooth permission first where the platform needs it.
@@ -328,12 +328,12 @@ func _on_notified(id: String, data: PackedByteArray) -> void:
 
 ## The Pressure Controller for [param hand], or null if the scene has none.
 func controller(hand: int) -> PressureTrackerMain:
-	return left_controller if hand == HexRTypes.Hand.LEFT else right_controller
+	return left_controller if hand == HaptGloveHandler.HandType.LEFT else right_controller
 
 
 ## The tracked hand for [param hand], or null if the scene has none.
 func tracked_hand(hand: int) -> HexRTrackedHand:
-	return left_hand if hand == HexRTypes.Hand.LEFT else right_hand
+	return left_hand if hand == HaptGloveHandler.HandType.LEFT else right_hand
 
 
 ## How curled each finger of [param hand] is, or null without a tracked hand.
@@ -343,7 +343,7 @@ func finger_use(hand: int) -> FingerUseTracking:
 
 
 func _register_hand(h: HexRTrackedHand) -> void:
-	if h.hand == HexRTypes.Hand.LEFT:
+	if h.hand == HaptGloveHandler.HandType.LEFT:
 		left_hand = h
 	else:
 		right_hand = h
@@ -357,7 +357,7 @@ func _unregister_hand(h: HexRTrackedHand) -> void:
 
 
 func _register_controller(c: PressureTrackerMain, hand: int) -> void:
-	if hand == HexRTypes.Hand.LEFT:
+	if hand == HaptGloveHandler.HandType.LEFT:
 		left_controller = c
 	else:
 		right_controller = c

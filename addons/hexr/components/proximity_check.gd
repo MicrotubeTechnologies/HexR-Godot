@@ -33,8 +33,8 @@ func _physics_process(_delta: float) -> void:
 
 
 func _exit_tree() -> void:
-	_set_near(HexRTypes.Hand.LEFT, false)
-	_set_near(HexRTypes.Hand.RIGHT, false)
+	_set_near(HaptGloveHandler.HandType.LEFT, false)
+	_set_near(HaptGloveHandler.HandType.RIGHT, false)
 
 
 ## True while [param hand] counts as near this zone.

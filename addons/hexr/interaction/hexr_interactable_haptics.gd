@@ -52,7 +52,7 @@ func bound_to() -> String:
 
 
 ## Reports what one interactor (a hand, a ray, a controller) is doing with this object.
-## [param hand] is [enum HexRTypes.Hand], or -1 when the toolkit cannot tell.
+## [param hand] is [enum HaptGloveHandler.HandType], or -1 when the toolkit cannot tell.
 func set_interactor_state(interactor_key: Variant, hand: int, hovering: bool, selecting: bool) -> void:
 	if not hovering and not selecting:
 		_engagements.erase(interactor_key)
@@ -83,7 +83,7 @@ func _recompute() -> void:
 		var hand: int = e["hand"]
 		if hand < 0:
 			# Unknown hand: whichever glove is there, right first.
-			hand = HexRTypes.Hand.RIGHT if _controller(HexRTypes.Hand.RIGHT) else HexRTypes.Hand.LEFT
+			hand = HaptGloveHandler.HandType.RIGHT if _controller(HaptGloveHandler.HandType.RIGHT) else HaptGloveHandler.HandType.LEFT
 		wanted[hand] = true
 	for hand in 2:
 		if wanted[hand]:

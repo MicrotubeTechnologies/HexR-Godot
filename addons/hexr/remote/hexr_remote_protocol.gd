@@ -66,18 +66,18 @@ static func _int(v: Variant, fallback: int) -> int:
 	return fallback
 
 
-## [enum HexRTypes.Hand] for "left"/"right" (any case), or -1.
+## [enum HaptGloveHandler.HandType] for "left"/"right" (any case), or -1.
 static func parse_hand(hand: String) -> int:
 	match hand.to_lower():
 		"left":
-			return HexRTypes.Hand.LEFT
+			return HaptGloveHandler.HandType.LEFT
 		"right":
-			return HexRTypes.Hand.RIGHT
+			return HaptGloveHandler.HandType.RIGHT
 	return -1
 
 
 static func hand_name(hand: int) -> String:
-	return "left" if hand == HexRTypes.Hand.LEFT else "right"
+	return "left" if hand == HaptGloveHandler.HandType.LEFT else "right"
 
 
 ## Round half to even, as the Unity package's Mathf.RoundToInt does.

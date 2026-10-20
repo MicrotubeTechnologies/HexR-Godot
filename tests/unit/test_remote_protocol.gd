@@ -4,8 +4,8 @@ extends HexRTest
 ## lines are the contract with the phone and are byte-identical to that file and to the HexR
 ## Companion's tests. Change one, change all.
 
-const F := HexRTypes.Finger
-const H := HexRTypes.Hand
+const F := Haptics.Finger
+const H := HaptGloveHandler.HandType
 
 const CONNECT_LEFT := "{\"type\":\"glove\",\"action\":\"connect\",\"hand\":\"left\"}"
 const DISCONNECT_RIGHT := "{\"type\":\"glove\",\"action\":\"disconnect\",\"hand\":\"right\"}"
@@ -148,7 +148,7 @@ func test_release_switches_every_channel_off() -> void:
 	connect_left()
 	hub.left.bt_send(hub.left.haptics.hexr_pressure(F.INDEX, true, 0.5, 1.0))
 	assert_eq(run(RELEASE), "", "accepted")
-	assert_eq(hub.left.haptics.get_channel_state(F.INDEX).mode, HexRTypes.HapticMode.OFF, "index off")
+	assert_eq(hub.left.haptics.get_channel_state(F.INDEX).mode, Haptics.HapticMode.OFF, "index off")
 
 
 func test_release_rejects_an_unknown_hand() -> void:

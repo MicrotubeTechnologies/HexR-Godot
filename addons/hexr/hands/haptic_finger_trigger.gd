@@ -9,8 +9,8 @@ extends Area3D
 ##         area.trigger_fix_pressure(0.6)
 ## [/codeblock]
 
-@export var hand: HexRTypes.Hand = HexRTypes.Hand.LEFT
-@export var finger: HexRTypes.Finger = HexRTypes.Finger.INDEX
+@export var hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT
+@export var finger: Haptics.Finger = Haptics.Finger.INDEX
 
 
 func controller() -> PressureTrackerMain:
@@ -24,7 +24,7 @@ func glove() -> HaptGloveHandler:
 
 
 func is_palm() -> bool:
-	return finger == HexRTypes.Finger.PALM
+	return finger == Haptics.Finger.PALM
 
 
 ## Presses this finger, skipping the hand-near check (the touch is the evidence).

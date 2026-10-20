@@ -125,8 +125,8 @@ func _physics_process(_delta: float) -> void:
 func _update_drag() -> void:
 	var by_hand := [[null, null], [null, null]]  # [hand] -> [thumb, index]
 	for a in _grip.get_overlapping_areas():
-		if a is HapticFingerTrigger and (a.finger == HexRTypes.Finger.THUMB or a.finger == HexRTypes.Finger.INDEX):
-			by_hand[a.hand][0 if a.finger == HexRTypes.Finger.THUMB else 1] = a
+		if a is HapticFingerTrigger and (a.finger == Haptics.Finger.THUMB or a.finger == Haptics.Finger.INDEX):
+			by_hand[a.hand][0 if a.finger == Haptics.Finger.THUMB else 1] = a
 	if _dragging_with == null:
 		for hand in 2:
 			if by_hand[hand][0] != null and by_hand[hand][1] != null:
@@ -149,7 +149,7 @@ func _on_poke_entered(area: Area3D) -> void:
 	if _poker != null or _dragging_with != null or not (area is HapticFingerTrigger):
 		return
 	var tp := area as HapticFingerTrigger
-	if tp.finger != HexRTypes.Finger.INDEX:
+	if tp.finger != Haptics.Finger.INDEX:
 		return
 	_poker = tp
 	_last_poke = _panel_position(tp)

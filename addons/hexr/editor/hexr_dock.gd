@@ -61,7 +61,7 @@ func _tester_tab() -> Control:
 	_intensity = _slider(col, "Intensity", 0.1, 1.0, 0.8, 0.05)
 	_frequency = _slider(col, "Vibration Hz", 0.1, 40.0, 18.0, 0.1)
 
-	for hand in [HexRTypes.Hand.LEFT, HexRTypes.Hand.RIGHT]:
+	for hand in [HaptGloveHandler.HandType.LEFT, HaptGloveHandler.HandType.RIGHT]:
 		col.add_child(HSeparator.new())
 		var head := HBoxContainer.new()
 		var title := _label(HexRTypes.hand_name(hand) + " glove")
@@ -139,12 +139,12 @@ func _press(hand: int, finger: int) -> void:
 
 func _vibrate(hand: int) -> void:
 	if _game():
-		debugger.send("vibrate", [hand, HexRTypes.Finger.INDEX, _frequency.value, _intensity.value])
+		debugger.send("vibrate", [hand, Haptics.Finger.INDEX, _frequency.value, _intensity.value])
 		await get_tree().create_timer(1.5).timeout
 		debugger.send("release", [hand])
 		return
 	var g := _editor_hub().glove(hand)
-	g.bt_send(g.haptics.hexr_vibration(HexRTypes.Finger.INDEX, true, _frequency.value, _intensity.value))
+	g.bt_send(g.haptics.hexr_vibration(Haptics.Finger.INDEX, true, _frequency.value, _intensity.value))
 	await get_tree().create_timer(1.5).timeout
 	g.release_all_channels()
 

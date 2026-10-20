@@ -2,8 +2,8 @@ extends HexRTest
 ## The floating menu: a fingertip poke lands on the right button, taps the finger, and a pinch
 ## on the header carries the panel.
 
-const F := HexRTypes.Finger
-const H := HexRTypes.Hand
+const F := Haptics.Finger
+const H := HaptGloveHandler.HandType
 
 var hub: HexRManager
 var sim: HexRSimulatedTransport
@@ -74,10 +74,10 @@ func test_poke_presses_connect_and_taps() -> void:
 	assert_eq(button.text, "Disconnect", "button reflects the connection")
 	var index := _finger(F.INDEX)
 	await tick_physics(2)
-	var before := lg.frames_with_op(HexRTypes.Op.SET_PRESSURE).size()
+	var before := lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).size()
 	index.global_position = menu.to_global(_panel_point(button))
 	await tick_physics(3)
-	assert_true(lg.frames_with_op(HexRTypes.Op.SET_PRESSURE).size() > before, "the poke tapped the index")
+	assert_true(lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).size() > before, "the poke tapped the index")
 	index.global_position = Vector3(0, 5, 0)
 	await tick_physics(3)
 	await wait_frames(2)

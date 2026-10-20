@@ -2,7 +2,7 @@ class_name PressureTrackerMain
 extends Node
 ## A hand's "Pressure Controller" (port of the Unity package's PressureTrackerMain). Every
 ## haptic for that hand goes through here; a hand without one produces no haptics. Reach it as
-## [code]HexR.controller(HexRTypes.Hand.LEFT)[/code].
+## [code]HexR.controller(HaptGloveHandler.HandType.LEFT)[/code].
 ##
 ## Calls other than the [code]remove_*[/code] ones only fire while the hand is near something:
 ## grabbing, poke-hovering, or touching a [ProximityCheck] (the "hand-near check"). Pass
@@ -11,9 +11,9 @@ extends Node
 ## Intensity is 0.1..1 (about 15..50 kPa). Components use a 10..60 strength scale; convert with
 ## [method strength_to_intensity].
 
-const F := HexRTypes.Finger
+const F := Haptics.Finger
 
-@export var hand: HexRTypes.Hand = HexRTypes.Hand.LEFT
+@export var hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT
 
 ## Set by grab interactions (HexRGrabbable, the XR Tools binding).
 var hand_grabbing := false

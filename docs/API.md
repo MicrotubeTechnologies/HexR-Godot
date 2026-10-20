@@ -4,7 +4,7 @@ Addon 0.1.0. Generated from the addon's doc comments by `tools/gen_api_docs.py`;
 edit those, not this file. The same text is in Godot's built-in help: press **F1** in the
 editor and search for `HexR`.
 
-Hands and fingers are the `HexRTypes.Hand` and `HexRTypes.Finger` enums (`int` in
+Hands and fingers are the `HaptGloveHandler.HandType` and `Haptics.Finger` enums (`int` in
 signatures). Intensities are 0.1–1 (about 15–50 kPa); frequencies are in Hz.
 
 ## Contents
@@ -27,9 +27,9 @@ signatures). Intensities are 0.1–1 (about 15–50 kPa); frequencies are in Hz.
 The HexR autoload, `HexR`: both gloves, their Bluetooth link and the scene's Pressure Controllers. Port of the Unity package's HexRManager.
 
 ```gdscript
-HexR.connect_hand(HexRTypes.Hand.LEFT)
+HexR.connect_hand(HaptGloveHandler.HandType.LEFT)
 HexR.glove_connected.connect(func(hand): print(HexRTypes.hand_name(hand), " connected"))
-HexR.controller(HexRTypes.Hand.LEFT).single_index_haptic(0.8)
+HexR.controller(HaptGloveHandler.HandType.LEFT).single_index_haptic(0.8)
 ```
 
 It survives scene changes, as autoloads do. Scenes bring their own rig (tracked hands and Pressure Controllers), which registers itself here.
@@ -103,7 +103,7 @@ Before the link closes, on pause and on quit, every channel is released: once di
 
 ### Properties
 
-- **`hand: int = HexRTypes.Hand.LEFT`** — Which hand this glove is.
+- **`hand: int = HaptGloveHandler.HandType.LEFT`** — Which hand this glove is.
 - **`haptics := Haptics.new()`** — Builds the commands and records the last one per channel.
 - **`decoder := HexRFrameDecoder.new()`** — The glove's latest readings.
 - **`coalescer := HexRWriteCoalescer.new()`** — Batches commands into at most one write per interval.
@@ -117,7 +117,7 @@ Before the link closes, on pause and on quit, every channel is released: once di
 - **`device_id := ""`** — The connected glove's id.
 - **`mtu := 0`** — The negotiated MTU while connected.
 - **`status_text := ""`** — Human-readable connection status, for menus.
-- **`battery_state: int = HexRTypes.BatteryState.FULL`**
+- **`battery_state: int = HaptGloveHandler.BatteryState.FULL`**
 
 ### Methods
 
@@ -141,6 +141,11 @@ Before the link closes, on pause and on quit, every channel is released: once di
 - **`get_air_pressure() -> PackedInt32Array`** — Raw pressure readings as whole numbers (Thumb..Palm, then the air source), as the Unity package returns them.
 - **`get_air_pressure_kpa() -> PackedFloat32Array`** — Pressure readings in gauge kPa (Thumb..Palm, then the air source).
 - **`get_finger_positions() -> PackedInt32Array`** — Finger position sensor readings, Thumb..Pinky.
+
+### Enums
+
+- **`HandType { LEFT, RIGHT }`** — Which hand a glove, controller or touch point belongs to.
+- **`BatteryState { FULL, MEDIUM, LOW }`** — The glove's battery, from its battery level.
 
 ### Constants
 
@@ -173,11 +178,17 @@ Intensity is 0.1..1 and maps linearly to 15..50 kPa. Speed is 0.1..1, the ramp r
 - **`static pump_control(start: bool, source_kpa: int = 80) -> PackedByteArray`** — Air-source pump control (function 0x02). Current firmware ignores it; it is sent for parity with the Unity package.
 - **`static set_pid(kp: float, ki: float, kd: float) -> PackedByteArray`** — PID gains for every channel's pressure loop (function 0x05). Changing them changes how every haptic feels; leave them alone unless Microtube asks.
 
+### Enums
+
+- **`Finger { THUMB, INDEX, MIDDLE, RING, PINKY, PALM }`** — Haptic channels in wire order (the channel byte, 0..5).
+- **`HapticMode { OFF, PRESSURE, VIBRATION, PULSE }`** — What a channel was last told to do.
+- **`FunIndex { FI_AIR_PRESSURE, FI_STABLE_PRESSURE_CTRL, FI_SET_PRESSURE_DEPRECATED, FI_SET_PRESSURE, FI_SET_PID, FI_SET_BATTERY_LED, FI_SET_VIBRATION, FI_SET_PULSE, FI_SET_VIB_SPEED, FI_SET_PULSE_SPEED }`** — Outbound function indices (app to glove), as the Unity package names them.
+
 ## HexRTypes
 
 *extends `RefCounted` · `addons/hexr/core/hexr_types.gd`*
 
-Shared enums and constants for the HexR glove. Values match the glove's wire protocol, so a `Finger` can be sent as a channel byte as-is.
+Wire-protocol constants and small helpers shared by the addon. The enums a game uses live where the Unity package has them: `HaptGloveHandler.HandType`, `HaptGloveHandler.BatteryState`, `Haptics.Finger`, `Haptics.HapticMode` and `Haptics.FunIndex`.
 
 ### Methods
 
@@ -188,11 +199,6 @@ Shared enums and constants for the HexR glove. Values match the glove's wire pro
 
 ### Enums
 
-- **`Hand { LEFT, RIGHT }`**
-- **`Finger { THUMB, INDEX, MIDDLE, RING, PINKY, PALM }`** — Haptic channels in wire order (channel byte 0..5).
-- **`HapticMode { OFF, PRESSURE, VIBRATION, PULSE }`**
-- **`BatteryState { FULL, MEDIUM, LOW }`**
-- **`Op { AIR_PRESSURE, STABLE_PRESSURE_CTRL, SET_PRESSURE_DEPRECATED, SET_PRESSURE, SET_PID, SET_BATTERY_LED, SET_VIBRATION, SET_PULSE, SET_VIB_SPEED, SET_PULSE_SPEED }`** — Outbound function indices (app to glove).
 - **`InOp { PRESSURE, MICROTUBE, CLUTCH_ACTIVATED, BATTERY }`** — Inbound function indices (glove to app, notifications).
 
 ### Constants
@@ -257,7 +263,7 @@ It reads `XRHandTracker` directly (the standard OpenXR joints), so it works on M
 
 ### Inspector properties
 
-- **`hand: HexRTypes.Hand = HexRTypes.Hand.LEFT`**
+- **`hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
 - **`tracker_name: StringName = &""`** — Leave empty for the standard OpenXR tracker (/user/hand_tracker/left or /right).
 - **`tip_radius := 0.008`**
 - **`tip_offsets: Array[Vector3] = []`** — Per finger, Thumb..Pinky. Empty uses the defaults for this hand.
@@ -268,7 +274,7 @@ It reads `XRHandTracker` directly (the standard OpenXR joints), so it works on M
 
 ### Properties
 
-- **`touch_points: Array[HapticFingerTrigger] = []`** — The six touch points, indexed by `HexRTypes.Finger`.
+- **`touch_points: Array[HapticFingerTrigger] = []`** — The six touch points, indexed by `Haptics.Finger`.
 - **`finger_use := FingerUseTracking.new()`**
 - **`tracking := false`** — True while the tracker reports this hand.
 
@@ -300,8 +306,8 @@ func _on_area_entered(area: Area3D) -> void:
 
 ### Inspector properties
 
-- **`hand: HexRTypes.Hand = HexRTypes.Hand.LEFT`**
-- **`finger: HexRTypes.Finger = HexRTypes.Finger.INDEX`**
+- **`hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
+- **`finger: Haptics.Finger = Haptics.Finger.INDEX`**
 
 ### Methods
 
@@ -342,7 +348,7 @@ How curled each finger is, from 0 (fully curled) to 1 (fully extended). Port of 
 
 *extends `Node` · `addons/hexr/haptics/pressure_tracker_main.gd`*
 
-A hand's "Pressure Controller" (port of the Unity package's PressureTrackerMain). Every haptic for that hand goes through here; a hand without one produces no haptics. Reach it as `HexR.controller(HexRTypes.Hand.LEFT)`.
+A hand's "Pressure Controller" (port of the Unity package's PressureTrackerMain). Every haptic for that hand goes through here; a hand without one produces no haptics. Reach it as `HexR.controller(HaptGloveHandler.HandType.LEFT)`.
 
 Calls other than the `remove_*` ones only fire while the hand is near something: grabbing, poke-hovering, or touching a [`ProximityCheck`](#proximitycheck) (the "hand-near check"). Pass `bypass_hand_check` to the custom calls to skip it.
 
@@ -350,7 +356,7 @@ Intensity is 0.1..1 (about 15..50 kPa). Components use a 10..60 strength scale; 
 
 ### Inspector properties
 
-- **`hand: HexRTypes.Hand = HexRTypes.Hand.LEFT`**
+- **`hand: HaptGloveHandler.HandType = HaptGloveHandler.HandType.LEFT`**
 
 ### Properties
 
@@ -555,7 +561,7 @@ With `follow_grip`, pressure follows how tightly the hand is closed, between `mi
 ### Methods
 
 - **`bound_to() -> String`** — What the binding is attached to, for diagnostics.
-- **`set_interactor_state(interactor_key: Variant, hand: int, hovering: bool, selecting: bool) -> void`** — Reports what one interactor (a hand, a ray, a controller) is doing with this object. `hand` is `HexRTypes.Hand`, or -1 when the toolkit cannot tell.
+- **`set_interactor_state(interactor_key: Variant, hand: int, hovering: bool, selecting: bool) -> void`** — Reports what one interactor (a hand, a ray, a controller) is doing with this object. `hand` is `HaptGloveHandler.HandType`, or -1 when the toolkit cannot tell.
 - **`clear_interactor(interactor_key: Variant) -> void`**
 
 ### Enums

@@ -2,8 +2,8 @@ extends HexRTest
 ## The connect campaign, releases and write rules, against the simulated firmware glove.
 ## Ports of the Unity package's ConnectionTests, DisconnectStatusTests and ReleaseTests.
 
-const H := HexRTypes.Hand
-const F := HexRTypes.Finger
+const H := HaptGloveHandler.HandType
+const F := Haptics.Finger
 
 var hub: HexRManager
 var sim: HexRSimulatedTransport
@@ -60,9 +60,9 @@ func test_pump_starts_two_seconds_after_connect() -> void:
 	advance(500)
 	assert_true(hub.is_hand_connected(H.LEFT), "connected")
 	advance(1500)
-	assert_eq(lg.frames_with_op(HexRTypes.Op.STABLE_PRESSURE_CTRL).size(), 0, "not yet")
+	assert_eq(lg.frames_with_op(Haptics.FunIndex.FI_STABLE_PRESSURE_CTRL).size(), 0, "not yet")
 	advance(400)
-	var pumps := lg.frames_with_op(HexRTypes.Op.STABLE_PRESSURE_CTRL)
+	var pumps := lg.frames_with_op(Haptics.FunIndex.FI_STABLE_PRESSURE_CTRL)
 	assert_eq(pumps.size(), 1, "pump sent once")
 	assert_bytes(pumps[0], "06 02 01 01 01 50", "pump start bytes")
 
@@ -75,7 +75,7 @@ func test_second_connect_starts_pump_again() -> void:
 	advance(100)
 	hub.connect_hand(H.LEFT)
 	advance(3000)
-	var pumps := lg.frames_with_op(HexRTypes.Op.STABLE_PRESSURE_CTRL)
+	var pumps := lg.frames_with_op(Haptics.FunIndex.FI_STABLE_PRESSURE_CTRL)
 	assert_eq(pumps.size(), 2, "two pump commands")
 	assert_bytes(pumps[1], "06 02 01 01 01 50", "second is start, not stop")
 
@@ -225,12 +225,12 @@ func test_telemetry_and_battery() -> void:
 	hub.connect_hand(H.LEFT)
 	advance(1500)
 	assert_almost(hub.left.get_battery_level(), 0.5, 1e-6, "battery read")
-	assert_eq(states, [HexRTypes.BatteryState.MEDIUM] as Array[int], "battery state")
+	assert_eq(states, [HaptGloveHandler.BatteryState.MEDIUM] as Array[int], "battery state")
 	assert_eq(hub.left.get_finger_positions(), lg.finger_position, "positions")
 	assert_almost(hub.left.get_air_pressure_kpa()[6], 80.0, 1e-4, "source pressure")
 	lg.battery = 0.1
 	advance(1500)
-	assert_eq(states.back(), HexRTypes.BatteryState.LOW, "low battery")
+	assert_eq(states.back(), HaptGloveHandler.BatteryState.LOW, "low battery")
 
 
 func test_two_hands_share_one_scan() -> void:
@@ -250,4 +250,4 @@ func test_simulated_link_cut_to_mtu_23() -> void:
 	hub.left.release_all_channels()
 	advance(200)
 	assert_eq(lg.dropped_long_writes, 0, "release cut into single-frame writes")
-	assert_eq(lg.frames_with_op(HexRTypes.Op.SET_PRESSURE).size(), 6, "all pressure exits arrived")
+	assert_eq(lg.frames_with_op(Haptics.FunIndex.FI_SET_PRESSURE).size(), 6, "all pressure exits arrived")

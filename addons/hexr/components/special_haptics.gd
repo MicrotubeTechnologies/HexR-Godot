@@ -176,7 +176,7 @@ func _tick_custom_haptics() -> void:
 			continue
 		var g := tp.glove()
 		if g and g.ble_connected and overlaps_area(tp) and not _pending_removal.has(tp) \
-				and g.haptics.get_channel_state(tp.finger).mode == HexRTypes.HapticMode.OFF:
+				and g.haptics.get_channel_state(tp.finger).mode == Haptics.HapticMode.OFF:
 			_press_point(tp)
 
 
@@ -204,7 +204,7 @@ func _tick_rain() -> void:
 		return
 	var touching := _touching()
 	for hand in 2:
-		if touching[hand][HexRTypes.Finger.PALM] == null:
+		if touching[hand][Haptics.Finger.PALM] == null:
 			continue
 		_ready_to_drop = false
 		_drop_rearm_at = _clock + 0.2
@@ -236,7 +236,7 @@ func _tick_heart_beat() -> void:
 				var on: Array = []
 				var any := false
 				for f in FINGERS:
-					var hit: bool = touching[hand][f] != null and (f != HexRTypes.Finger.PALM or include_palm)
+					var hit: bool = touching[hand][f] != null and (f != Haptics.Finger.PALM or include_palm)
 					on.append(hit)
 					any = any or hit
 				var g := _glove(hand)

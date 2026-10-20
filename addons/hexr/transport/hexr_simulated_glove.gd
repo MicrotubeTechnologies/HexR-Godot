@@ -77,14 +77,14 @@ func _apply(frame: PackedByteArray) -> void:
 	if frame.size() < 2:
 		return
 	var op := frame[1]
-	if op == HexRTypes.Op.SET_PRESSURE and frame.size() >= 18:
+	if op == Haptics.FunIndex.FI_SET_PRESSURE and frame.size() >= 18:
 		var ch := frame[8]
 		var state := frame[10]
 		var kpa := frame.decode_float(12)
 		if ch < 6:
 			target_kpa[ch] = kpa if state == HexRTypes.STATE_ENTER and kpa >= 15.0 else 0.0
-	elif (op == HexRTypes.Op.SET_VIBRATION or op == HexRTypes.Op.SET_PULSE
-			or op == HexRTypes.Op.SET_VIB_SPEED or op == HexRTypes.Op.SET_PULSE_SPEED) and frame.size() >= 18:
+	elif (op == Haptics.FunIndex.FI_SET_VIBRATION or op == Haptics.FunIndex.FI_SET_PULSE
+			or op == Haptics.FunIndex.FI_SET_VIB_SPEED or op == Haptics.FunIndex.FI_SET_PULSE_SPEED) and frame.size() >= 18:
 		var ch := frame[8]
 		if ch < 6:
 			vibrating[ch] = frame[10] == HexRTypes.STATE_ENTER
