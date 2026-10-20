@@ -36,6 +36,8 @@ var _binding: HexRXRToolsBinding
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	if auto_bind_xr_tools:
 		_binding = HexRXRToolsBinding.bind(get_parent(), self)
 

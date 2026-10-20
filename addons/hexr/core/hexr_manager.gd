@@ -116,9 +116,36 @@ func _on_debugger_message(message: String, data: Array) -> bool:
 			g.bt_send(g.haptics.hexr_vibration(data[1], true, data[2], data[3]))
 		"release":
 			glove(data[0]).release_all_channels()
+		# The Haptics Tester's call: [hand, finger, vibration, on, intensity, speed or Hz, bypass]
+		"custom":
+			_tester_call(data[0], data[1], data[2], data[3], data[4], data[5], data[6])
+		"all_off":
+			var c := controller(data[0])
+			if c:
+				c.remove_all_haptics()
+				c.remove_all_vibrations()
+			else:
+				glove(data[0]).release_all_channels()
 		_:
 			return false
 	return true
+
+
+## What the HexR Tools Haptics Tester sends: through the hand's Pressure Controller when the scene
+## has one (so the hand-near check applies unless bypassed), straight to the glove otherwise.
+func _tester_call(hand: int, finger: int, vibration: bool, on: bool, intensity: float, value: float, bypass: bool) -> void:
+	var c := controller(hand)
+	if c:
+		if vibration:
+			c.custom_single_vibrations(finger, on, intensity, value, bypass)
+		else:
+			c.custom_single_haptics(finger, on, intensity, value, bypass)
+		return
+	var g := glove(hand)
+	if vibration:
+		g.bt_send(g.haptics.hexr_vibration(finger, on, value, intensity))
+	else:
+		g.bt_send(g.haptics.hexr_pressure(finger, on, intensity, value))
 
 
 func _report_to_debugger(now_ms: int) -> void:

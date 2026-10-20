@@ -45,6 +45,8 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	if the_object == null:
 		the_object = get_parent() as Node3D
 

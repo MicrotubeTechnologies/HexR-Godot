@@ -62,6 +62,8 @@ var _joint_globals: Dictionary = {}
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	_build_touch_points()
 	var hub := HexRManager.get_instance()
 	if hub:

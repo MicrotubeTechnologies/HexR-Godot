@@ -108,6 +108,8 @@ static func command_list() -> Array:
 # -- lifecycle ------------------------------------------------------------------------------
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	if instance != null and instance != self and is_instance_valid(instance):
 		queue_free()
 		return

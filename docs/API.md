@@ -250,7 +250,11 @@ The glove sends three frames 50 times a second once notifications are on: finger
 
 *extends `Node3D` · `addons/hexr/hands/hexr_rig.gd`*
 
-The HexR rig for a scene: both [`HexRTrackedHand`](#hexrtrackedhand)s and both [`PressureTrackerMain`](#pressuretrackermain)s. Put it under your `XROrigin3D`. Missing parts are created when the scene runs, so an empty HexRRig node is a complete rig; Project > Tools > HexR > Create HexR Rig adds them as nodes you can see and tune.
+The HexR rig for a scene: both [`HexRTrackedHand`](#hexrtrackedhand)s and both [`PressureTrackerMain`](#pressuretrackermain)s. Put it under your `XROrigin3D`. Missing parts are created when the scene runs, so an empty HexRRig node is a complete rig; HexR > Create HexR Rig adds them as nodes you can see and tune. It is the Godot side of the Unity package's "HexR Main" rig, and the node is named that.
+
+### Inspector properties
+
+- **`start_xr := true`** — Switch the viewport to the headset when the scene starts, as Unity's XR Plug-in Management does. Harmless next to another start-up script such as XR Tools' StartXR.
 
 ### Methods
 

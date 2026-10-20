@@ -25,7 +25,6 @@ const FINGERS := 6
 @export_range(0.1, 40.0, 0.1) var vibrations_frequency_value := 1.0
 ## Custom haptics pressure on the 10..60 strength scale.
 @export_range(10.0, 60.0, 10.0) var haptic_pressure := 10.0
-@export_group("Heart beat")
 ## Intensity (0.1..1) of each beat.
 @export_range(0.1, 1.0, 0.1) var heart_beat_pressure := 0.5
 @export var heartbeat: HeartBeat = HeartBeat.REGULAR
@@ -34,7 +33,6 @@ const FINGERS := 6
 @export var out_timer := 0.3
 ## Let the palm feel the beat too.
 @export var include_palm := false
-@export_group("Hand squeeze")
 ## The squeeze fires when a finger enters the zone while every finger's use (0 curled .. 1
 ## extended) is at least this value. The Unity package's rule, kept as is.
 @export_range(0.0, 1.0, 0.05) var squeeze_tightness := 0.2
@@ -76,6 +74,8 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	area_entered.connect(_on_area_entered)
 	area_exited.connect(_on_area_exited)
 	_start_beat_in()
