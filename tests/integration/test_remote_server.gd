@@ -194,7 +194,9 @@ func test_port_fallback() -> void:
 	_blocker = TCPServer.new()
 	assert_eq(_blocker.listen(BASE_PORT + 20, "*"), OK, "blocking the preferred port")
 	await start_remote(BASE_PORT + 20)
-	assert_eq(remote.get_control_port(), BASE_PORT + 21, "moved to the next port")
+	# The next free one: on a CI runner an outgoing connection can hold the very next port.
+	var p := remote.get_control_port()
+	assert_true(p > BASE_PORT + 20 and p <= BASE_PORT + 29, "moved to one of the next nine ports (got %d)" % p)
 
 
 func test_registered_command_runs_from_a_phone() -> void:
