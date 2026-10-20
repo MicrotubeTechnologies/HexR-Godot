@@ -207,15 +207,57 @@ jobs:
           cp LICENSE THIRD-PARTY-NOTICES.md addons/hexr/
           zip -qr "HexR-Godot-${{ steps.version.outputs.version }}.zip" addons/hexr
           unzip -l "HexR-Godot-${{ steps.version.outputs.version }}.zip" | tail -3
+          # The same zip without the version in its name, so releases/latest/download/HexR-Godot.zip
+          # always gives the newest.
+          cp "HexR-Godot-${{ steps.version.outputs.version }}.zip" HexR-Godot.zip
       - uses: actions/upload-artifact@v4
         with:
           name: HexR-Godot-${{ steps.version.outputs.version }}
           path: HexR-Godot-*.zip
+      # The Godot Asset Library installs a commit's archive, so the finished addon, native libraries
+      # included, is committed to the asset-library branch (main stays source only) and tagged, so
+      # every version's commit stays reachable. Godot's AssetLib tab then installs it in one click.
+      - name: Asset Library branch
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          AL="$RUNNER_TEMP/asset-library"
+          if git fetch --no-tags --depth=1 origin asset-library; then
+            git worktree add -B asset-library "$AL" FETCH_HEAD
+          else
+            git worktree add --orphan -b asset-library "$AL"
+          fi
+          rm -rf "$AL/addons"
+          mkdir -p "$AL/addons"
+          cp -a addons/hexr "$AL/addons/"
+          cp LICENSE "$AL/LICENSE"
+          {
+            echo "# HexR for Godot $VERSION"
+            echo
+            echo "The installable addon, as the Godot Asset Library downloads it. Source, issues and"
+            echo "releases: https://github.com/MicrotubeTechnologies/HexR-Godot"
+          } > "$AL/README.md"
+          {
+            echo '/** export-ignore'
+            echo '/addons !export-ignore'
+            echo '/addons/** !export-ignore'
+          } > "$AL/.gitattributes"
+          cd "$AL"
+          git add -A -f
+          git commit -q -m "HexR $VERSION for the Godot Asset Library"
+          git tag "asset-library/v$VERSION"
+          git push origin asset-library "refs/tags/asset-library/v$VERSION"
+          echo "Asset Library commit for $VERSION: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: HexR-Godot-*.zip
+          files: |
+            HexR-Godot-*.zip
+            HexR-Godot.zip
           generate_release_notes: true
-          # 0.x releases are previews.
-          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
+          # Only a tag with a suffix (v0.2.0-rc1) is a pre-release, so releases/latest finds the rest.
+          prerelease: ${{ contains(github.ref_name, '-') }}
