@@ -6,7 +6,8 @@ HexR Remote. It sends the same bytes as the HexR Unity package (`com.microtube.h
 the glove, the HexR Tester and the HexR Companion behave the same with Godot apps.
 
 > [!NOTE]
-> Documentation: [microtube.tech/hexr-guide-godot](https://microtube.tech/hexr-guide-godot.html).
+> API reference: [docs/API.md](docs/API.md), also in Godot's built-in help (**F1**, search `HexR`).
+> Guides: the Godot section of the [HEXR documentation](https://microtube.tech/hexr-docs).
 > A ready-to-run project: [HexR-Developer-Tutorial-Godot](https://github.com/MicrotubeTechnologies/HexR-Developer-Tutorial-Godot).
 
 ---
@@ -66,8 +67,8 @@ HexR.left.release_all_channels()
 | `HexRFloatingMenu` | Connect, battery and a live haptics readout, pressed with a fingertip |
 | `HexRRemote` | The HexR Companion's link: status, gloves, scenes, commands, view and sound |
 
-The full API, and how it maps onto the Unity package, is in
-[docs/](docs/) and on the [website](https://microtube.tech/hexr-godot-api.html).
+Every class, signal, property and method is in [docs/API.md](docs/API.md), generated from the
+addon's doc comments, and in Godot's built-in help (**F1**, search `HexR`).
 
 ---
 
@@ -90,7 +91,7 @@ android_plugin/     Gradle project: hexr-ble and hexr-remote AARs (Java, no Andr
 gdextension/        C++/WinRT Bluetooth extension, godot-cpp submodule (godot-4.5-stable)
 tests/              headless GDScript tests, fixtures, the Remote harness, smoke scenes
 tools/              golden-frame generator, Remote conformance check, version and library checks
-docs/               RemoteProtocol.md (shared with the Unity package)
+docs/               API.md (generated), RemoteProtocol.md (shared with the Unity package)
 ```
 
 ```bash
@@ -100,6 +101,9 @@ godot --headless --path . -s res://tests/run_tests.gd
 
 # Wire-format fixtures: regenerate, or check they are current
 python tools/gen_golden_frames.py [--check]
+
+# The API reference, from the ## doc comments: regenerate after changing them
+python tools/gen_api_docs.py [--check]
 
 # HexR Remote against the Unity package's own probe
 python tools/remote_conformance.py --godot path/to/godot

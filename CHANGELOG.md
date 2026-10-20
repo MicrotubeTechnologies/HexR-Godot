@@ -3,6 +3,12 @@
 The HexR Godot addon. Versions follow semver; the HexR Remote protocol level it speaks is
 `HexRManager.PROTOCOL_VERSION` (the Unity package version it matches).
 
+## Unreleased
+
+- `docs/API.md`: the API reference, generated from the doc comments by `tools/gen_api_docs.py`
+  and checked by CI.
+- The `HexRXRToolsBinding.bind` doc comment names its parameter, `start`, correctly.
+
 ## 0.1.0 (2026-10-19)
 
 First Godot release.

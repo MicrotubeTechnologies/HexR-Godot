@@ -11,7 +11,7 @@ var _sink: HexRInteractableHaptics
 var _held_by := -1
 
 
-## Binds [param pickable] (or its nearest ancestor with a picked_up signal). Returns null if
+## Binds [param start] (or its nearest ancestor with a picked_up signal). Returns null if
 ## there is nothing to bind to.
 static func bind(start: Node, sink: HexRInteractableHaptics) -> HexRXRToolsBinding:
 	var n := start
