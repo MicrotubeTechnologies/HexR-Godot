@@ -151,6 +151,7 @@ static func create_demo_scene() -> void:
 	var floor_body := StaticBody3D.new()
 	floor_body.name = "Floor"
 	var plane := MeshInstance3D.new()
+	plane.name = "Mesh"
 	plane.mesh = PlaneMesh.new()
 	(plane.mesh as PlaneMesh).size = Vector2(4, 4)
 	floor_body.add_child(plane)
@@ -174,6 +175,7 @@ static func create_demo_scene() -> void:
 	cube.position = Vector3(-0.12, 1.0, -0.35)
 	cube.gravity_scale = 0.0
 	var cube_mesh := MeshInstance3D.new()
+	cube_mesh.name = "Mesh"
 	cube_mesh.mesh = BoxMesh.new()
 	(cube_mesh.mesh as BoxMesh).size = Vector3.ONE * 0.07
 	cube.add_child(cube_mesh)
@@ -197,6 +199,7 @@ static func create_demo_scene() -> void:
 	zone.type_of_haptics = SpecialHaptics.Options.CUSTOM_HAPTICS
 	zone.haptic_pressure = 30.0
 	var ball := MeshInstance3D.new()
+	ball.name = "Mesh"
 	ball.mesh = SphereMesh.new()
 	(ball.mesh as SphereMesh).radius = 0.06
 	(ball.mesh as SphereMesh).height = 0.12
@@ -223,6 +226,7 @@ static func create_demo_scene() -> void:
 
 static func _shape(shape: Shape3D, size: Vector3, at := Vector3.ZERO) -> CollisionShape3D:
 	var cs := CollisionShape3D.new()
+	cs.name = "CollisionShape3D"
 	if shape is BoxShape3D:
 		(shape as BoxShape3D).size = size
 	cs.shape = shape

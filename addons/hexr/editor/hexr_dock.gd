@@ -64,6 +64,8 @@ var _quest: CheckBox
 var _pico: CheckBox
 var _progress: Label
 var _update_url := ""
+## Addons installed since the editor started: they load on the next start.
+var _restart_for := PackedStringArray()
 
 
 func _init() -> void:
@@ -534,6 +536,10 @@ func refresh_project() -> void:
 		return
 	for c in _setup_rows.get_children():
 		c.queue_free()
+	if not _restart_for.is_empty():
+		_setup_rows.add_child(_status_row(false, "Restart the editor to load " + " and ".join(_restart_for),
+				"until then its scripts can report errors in the Output.", "Restart now",
+				func() -> void: EditorInterface.restart_editor(true)))
 	_setup_rows.add_child(_header("REQUIRED"))
 	_setup_rows.add_child(_status_row(Setup.is_installed(Setup.VENDORS), "OpenXR Vendors plugin %s" % Setup.VENDORS["version"],
 			"Quest and PICO support.", "Install", func() -> void: _install(Setup.VENDORS)))
@@ -628,7 +634,10 @@ func _status_row(ok: bool, title_text: String, detail: String, action: String, o
 
 
 func _install(addon: Dictionary) -> void:
-	_installer.install_addon(addon, _done)
+	_installer.install_addon(addon, func(ok: bool, message: String) -> void:
+		if ok and not _restart_for.has(addon["name"]):
+			_restart_for.append(addon["name"])
+		_done(ok, message))
 
 
 func _add_presets() -> void:

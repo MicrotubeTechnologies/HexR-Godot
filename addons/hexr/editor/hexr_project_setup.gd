@@ -135,8 +135,12 @@ static func add_presets(quest: bool, pico: bool) -> PackedStringArray:
 		cfg.set_value(section, "name", want[2])
 		cfg.set_value(section, "platform", "Android")
 		cfg.set_value(section, "runnable", true)
+		cfg.set_value(section, "dedicated_server", false)
 		cfg.set_value(section, "custom_features", want[0])
 		cfg.set_value(section, "export_filter", "all_resources")
+		# The editor reads both filters with no default, so they have to be there.
+		cfg.set_value(section, "include_filter", "")
+		cfg.set_value(section, "exclude_filter", "")
 		cfg.set_value(section, "export_path", "build/%s-%s.apk" % [app.validate_filename().replace(" ", "-"), want[0]])
 		var opts := section + ".options"
 		for key in PRESET_COMMON:
