@@ -47,7 +47,8 @@ jobs:
           echo "3d/physics_engine=\"${{ matrix.physics }}\"" >> override.cfg
           cat override.cfg
       - name: Import
-        run: ./godot --headless --path . --import || true
+        # Godot now and then crashes importing the fonts into a fresh cache; a second run finishes it.
+        run: ./godot --headless --path . --import || ./godot --headless --path . --import || true
       - name: Tests
         run: ./godot --headless --path . -s res://tests/run_tests.gd -- --junit=tests/results.xml
       - name: HexR Remote conformance (Unity probe)
