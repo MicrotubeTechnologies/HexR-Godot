@@ -1,125 +1,244 @@
+@tool
 class_name HexRFloatingMenu
 extends Node3D
-## The HexR menu as a panel in the room (port of the Unity package's HexRFloatingMenu): press
-## its buttons with a fingertip, move it by pinching its header. It stays where it is put, and
-## does not follow the head; call [method recenter] to bring it in front of the wearer.
+## The HexR menu as a panel in the room (port of the Unity package's HexRFloatingMenu): press its
+## buttons with a fingertip, move it by pinching its header. It stays where it is put and does not
+## follow the head; [method recenter] brings it in front of the wearer.
 ##
-## Each press gives the pressing finger a short tap.
+## Every button has a press volume of its own, as in Unity: the index finger presses on entry,
+## feels a held press while it stays in, and can press again 0.2 s after it leaves. The volume
+## reaches through the panel, so a finger from either side works.
+##
+## One panel serves the whole session: the first one moves to the scene tree's root and outlives
+## scene changes, rebuilding its SCENES and DEMOS for each new scene; a later scene's copy stands
+## down. Its origin is the top edge of the header, which is what you grab.
 
-## Panel width in metres.
-@export var panel_width := 0.26
-@export var show_haptics_readout := true
-## Scene paths offered on the panel. Empty hides the section.
-@export var scenes: PackedStringArray = []
-## Where [method recenter] puts the panel, relative to the head.
+## The live panel, so anything can call [method recenter]. Null when there is none.
+static var instance: HexRFloatingMenu
+
+@export_group("Placement")
+## How far in front of the head [method recenter] puts the panel, in metres.
 @export var spawn_distance := 0.65
-@export var spawn_height_offset := -0.2
+## How far to the side, in metres; negative is to the left.
 @export var spawn_side_offset := -0.35
-## Bring the panel in front of the wearer when the scene starts.
+## How far above (or below, negative) the eyes.
+@export var spawn_height_offset := -0.2
+## Bring the panel in front of the wearer when the app starts.
 @export var recenter_on_start := false
+@export_group("Panel")
+## Panel width in metres. Height follows from the contents.
+@export var panel_width := 0.26:
+	set(v):
+		panel_width = v
+		_queue_preview()
+@export_group("Behaviour")
+## One button per scene in the project setting [code]hexr/scenes[/code] (Godot's stand-in for
+## Unity's Build Settings), when it lists two or more.
+@export var show_scene_switcher := true:
+	set(v):
+		show_scene_switcher = v
+		_queue_preview()
+## One button per "... Demo Components" node in the scene, one of them shown at a time.
+@export var show_demo_groups := true:
+	set(v):
+		show_demo_groups = v
+		_queue_preview()
+## What each channel of each glove was last told to do.
+@export var show_haptics_readout := true:
+	set(v):
+		show_haptics_readout = v
+		_queue_preview()
+## Draw the panel in the editor's 3D view. The preview is never saved into the scene.
+@export var preview_in_editor := true:
+	set(v):
+		preview_in_editor = v
+		_queue_preview()
 
 const VIEWPORT_WIDTH := 640
-const POKE_DEPTH := 0.03
-const TAP_INTENSITY := 0.35
+## Unity's press depth: 30 of its panel's 360 pixels, centred on the panel.
+const PRESS_DEPTH_PX := 30.0
 
+## The 2D content.
 var panel: HexRMenuPanel
 var _viewport: SubViewport
 var _quad: MeshInstance3D
-var _poke: Area3D
 var _grip: Area3D
-var _poker: HapticFingerTrigger
-var _last_poke := Vector2.ZERO
-var _drag_offset := Transform3D()
-var _dragging_with: HapticFingerTrigger
+var _volumes: Array[Node] = []
 var _size := Vector2.ZERO
+var _drag_hand := -1
+var _drag_offset := Transform3D()
+var _moving := false
+var _preview_queued := false
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		_rebuild()
+		return
+	if instance != null and is_instance_valid(instance) and instance != self:
+		queue_free()
+		return
+	instance = self
+	_rebuild()
+	get_tree().scene_changed.connect(_on_scene_changed)
+	# Outlive scene changes, as the Unity panel does with DontDestroyOnLoad.
+	if get_parent() != get_tree().root:
+		_moving = true
+		reparent.call_deferred(get_tree().root)
+		_finish_move.call_deferred()
+	if recenter_on_start:
+		recenter.call_deferred()
+
+
+# A HexR 0.1 menu carried its own scene list; the list is now the project setting hexr/scenes.
+func _set(property: StringName, value: Variant) -> bool:
+	if property != &"scenes":
+		return false
+	if not Engine.is_editor_hint():
+		show_scene_switcher = not (value as PackedStringArray).is_empty()
+	HexRTypes.warn_renamed(self, "scenes", "show_scene_switcher (list the scenes in the hexr/scenes project setting)")
+	return true
+
+
+func _finish_move() -> void:
+	_moving = false
+
+
+func _exit_tree() -> void:
+	if _moving or Engine.is_editor_hint():
+		return
+	if instance == self:
+		instance = null
+
+
+func _on_scene_changed() -> void:
+	# The scene list's current scene and the demos belong to the scene, so they are rebuilt;
+	# the panel keeps wherever the wearer put it.
+	_rebuild()
+
+
+## Rebuilds the panel, its quad and its press volumes.
+func _rebuild() -> void:
+	_preview_queued = false
+	for n in [_viewport, _quad, _grip] + _volumes:
+		if n != null and is_instance_valid(n):
+			n.queue_free()
+	_volumes.clear()
+	_viewport = null
+	_quad = null
+	_grip = null
+	if Engine.is_editor_hint() and not preview_in_editor:
+		return
+
 	_viewport = SubViewport.new()
 	_viewport.transparent_bg = true
-	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	_viewport.gui_embed_subwindows = true
-	panel = HexRMenuPanel.new()
+	_viewport.disable_3d = true
+	_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE if Engine.is_editor_hint() else SubViewport.UPDATE_ALWAYS
+	if panel == null or not is_instance_valid(panel):
+		panel = HexRMenuPanel.new()
+	elif panel.get_parent():
+		panel.get_parent().remove_child(panel)
 	panel.show_haptics_readout = show_haptics_readout
-	panel.scenes = scenes
-	panel.recenter_requested.connect(recenter)
-	panel.touch_points_toggled.connect(_set_touch_points_visible)
-	panel.scene_requested.connect(func(path: String) -> void: get_tree().change_scene_to_file(path))
+	panel.show_scene_switcher = show_scene_switcher
+	panel.show_demo_groups = show_demo_groups
 	_viewport.add_child(panel)
-	add_child(_viewport)
-	# Let the panel lay itself out, then size the viewport and the quad to it.
-	await get_tree().process_frame
-	var px := Vector2i(VIEWPORT_WIDTH, maxi(int(panel.get_combined_minimum_size().y), 200))
-	_viewport.size = px
-	panel.size = Vector2(px)
-	_size = Vector2(panel_width, panel_width * px.y / px.x)
-	_build_surface()
-	if recenter_on_start:
-		recenter()
+	_add(_viewport)
+	panel.build(VIEWPORT_WIDTH)
+	_viewport.size = Vector2i(panel.size)
+	_size = Vector2(panel_width, panel_width * panel.size.y / VIEWPORT_WIDTH)
 
-
-func _build_surface() -> void:
 	_quad = MeshInstance3D.new()
 	var mesh := QuadMesh.new()
 	mesh.size = _size
 	_quad.mesh = mesh
+	_quad.position = Vector3(0, -_size.y * 0.5, 0)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = _viewport.get_texture()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_quad.material_override = mat
-	add_child(_quad)
+	_add(_quad)
+	if Engine.is_editor_hint():
+		return
 
-	# A thin volume in front of the panel: a fingertip entering it presses.
-	_poke = _box_area(Vector3(_size.x, _size.y, POKE_DEPTH), Vector3(0, 0, POKE_DEPTH * 0.5 - 0.004))
-	_poke.area_entered.connect(_on_poke_entered)
-	_poke.area_exited.connect(_on_poke_exited)
+	var px := panel_width / VIEWPORT_WIDTH
+	for b: Dictionary in panel.buttons:
+		_volumes.append(_press_volume(b["pill"], b["rect"], px))
 	# The header strip: a pinch there picks the panel up.
-	var header_h := 0.035
-	_grip = _box_area(Vector3(_size.x, header_h, 0.06), Vector3(0, _size.y * 0.5 - header_h * 0.5, 0.01))
+	var header_h := HexRMenuPanel.HEADER_HEIGHT * panel_width / HexRMenuPanel.UNITY_WIDTH
+	_grip = _box_area(Area3D.new(), Vector3(_size.x, header_h, 0.02), Vector3(0, -header_h * 0.5, 0))
 
 
-func _box_area(size: Vector3, offset: Vector3) -> Area3D:
-	var area := Area3D.new()
+func _press_volume(pill: HexRMenuPanel.Pill, rect: Rect2, px: float) -> HexRPhysicalButton:
+	var press := HexRPhysicalButton.new()
+	press.name = "Press " + pill.label.text
+	# No travel: the feedback is the button darkening. Pressure 35 is 0.55, held while the
+	# finger is in, as the Unity menu does.
+	press.travel = 0.0
+	press.press_pressure = 35.0
+	press.rearm_seconds = 0.2
+	press.pressed.connect(func() -> void: panel.press(pill))
+	press.released.connect(func() -> void: panel.release(pill))
+	var c := rect.get_center()
+	var depth := PRESS_DEPTH_PX / HexRMenuPanel.UNITY_WIDTH * panel_width
+	return _box_area(press, Vector3(rect.size.x * px, rect.size.y * px, depth),
+			Vector3((c.x - VIEWPORT_WIDTH * 0.5) * px, -c.y * px, 0))
+
+
+func _box_area(area: Area3D, size: Vector3, at: Vector3) -> Area3D:
 	area.collision_layer = 0
 	area.collision_mask = 1 << 19
 	area.monitorable = false
+	area.position = at
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = size
 	shape.shape = box
-	shape.position = offset
 	area.add_child(shape)
-	add_child(area)
+	_add(area)
 	return area
 
 
-## Puts the panel in front of the wearer's head, facing them.
+# Internal children: never saved with the scene, never shown in the Scene dock.
+func _add(n: Node) -> void:
+	add_child(n, false, Node.INTERNAL_MODE_BACK)
+
+
+func _queue_preview() -> void:
+	if Engine.is_editor_hint() and is_inside_tree() and not _preview_queued:
+		_preview_queued = true
+		_rebuild.call_deferred()
+
+
+## Puts the panel in front of the wearer's head, facing them. Safe to call any time.
 func recenter() -> void:
 	var cam := get_viewport().get_camera_3d()
 	if cam == null:
 		return
 	var head := cam.global_transform
+	# Flattened forward and right, so the panel hangs level however the head is tilted.
 	var forward := -head.basis.z
 	forward.y = 0.0
 	forward = forward.normalized() if forward.length() > 0.01 else Vector3.FORWARD
 	var right := forward.cross(Vector3.UP).normalized()
-	var pos := head.origin + forward * spawn_distance + Vector3.UP * spawn_height_offset + right * -spawn_side_offset
+	var pos := head.origin + forward * spawn_distance + right * spawn_side_offset + Vector3.UP * spawn_height_offset
 	global_position = pos
 	# The quad's front is +Z: turn it to face the head, upright.
 	look_at(Vector3(head.origin.x, pos.y, head.origin.z), Vector3.UP, true)
 
 
+func _process(_delta: float) -> void:
+	if Engine.is_editor_hint() or panel == null:
+		return
+	panel.refresh()
+
+
 func _physics_process(_delta: float) -> void:
-	if _quad == null:
+	if Engine.is_editor_hint() or _grip == null:
 		return
 	_update_drag()
-	# Follow the finger only while it is in front of the panel. This runs before the physics
-	# step reports an exit, so a finger already pulled away must not move the pointer.
-	if _poker != null and is_instance_valid(_poker) and _in_poke_volume(_poker):
-		_last_poke = _panel_position(_poker)
-		_send_at(_last_poke, InputEventMouseMotion.new())
 
 
 func _update_drag() -> void:
@@ -127,82 +246,23 @@ func _update_drag() -> void:
 	for a in _grip.get_overlapping_areas():
 		if a is HapticFingerTrigger and (a.finger_type == Haptics.Finger.THUMB or a.finger_type == Haptics.Finger.INDEX):
 			by_hand[a.hand_type][0 if a.finger_type == Haptics.Finger.THUMB else 1] = a
-	if _dragging_with == null:
+	if _drag_hand < 0:
 		for hand in 2:
 			if by_hand[hand][0] != null and by_hand[hand][1] != null:
-				_dragging_with = by_hand[hand][1]
-				_drag_offset = _dragging_with.global_transform.affine_inverse() * global_transform
+				_drag_hand = hand
+				_drag_offset = _hand_frame(hand, by_hand[hand][1]).affine_inverse() * global_transform
 				break
-	elif by_hand[_dragging_with.hand_type][0] == null or by_hand[_dragging_with.hand_type][1] == null:
-		_dragging_with = null
-	if _dragging_with != null:
-		var t := _dragging_with.global_transform * _drag_offset
-		# Keep the panel upright while carried.
-		global_position = t.origin
-		var fwd := t.basis.z
-		fwd.y = 0.0
-		if fwd.length() > 0.01:
-			global_basis = Basis.looking_at(-fwd.normalized(), Vector3.UP)
+	elif by_hand[_drag_hand][0] == null or by_hand[_drag_hand][1] == null:
+		_drag_hand = -1
+	if _drag_hand >= 0:
+		# Position and rotation follow the hand freely, as in Unity.
+		global_transform = _hand_frame(_drag_hand, by_hand[_drag_hand][1]) * _drag_offset
 
 
-func _on_poke_entered(area: Area3D) -> void:
-	if _poker != null or _dragging_with != null or not (area is HapticFingerTrigger):
-		return
-	var tp := area as HapticFingerTrigger
-	if tp.finger_type != Haptics.Finger.INDEX:
-		return
-	_poker = tp
-	_last_poke = _panel_position(tp)
-	_send_at(_last_poke, InputEventMouseMotion.new())
-	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
-	press.pressed = true
-	_send_at(_last_poke, press)
-	_tap(tp)
-
-
-func _on_poke_exited(area: Area3D) -> void:
-	if area != _poker:
-		return
-	# Released where the finger last was on the panel: a finger pulling back has already left
-	# by the time this runs, and a release outside the button would cancel the click.
-	var release := InputEventMouseButton.new()
-	release.button_index = MOUSE_BUTTON_LEFT
-	release.pressed = false
-	_send_at(_last_poke, release)
-	_poker = null
-
-
-func _in_poke_volume(tp: HapticFingerTrigger) -> bool:
-	var local := to_local(tp.global_position)
-	return absf(local.x) <= _size.x * 0.5 and absf(local.y) <= _size.y * 0.5 			and local.z >= -0.01 and local.z <= POKE_DEPTH
-
-
-## The fingertip mapped onto the panel, in viewport pixels.
-func _panel_position(tp: HapticFingerTrigger) -> Vector2:
-	var local := to_local(tp.global_position)
-	var uv := Vector2(local.x / _size.x + 0.5, 0.5 - local.y / _size.y)
-	return uv.clamp(Vector2.ZERO, Vector2.ONE) * Vector2(_viewport.size)
-
-
-func _send_at(pos: Vector2, event: InputEventMouse) -> void:
-	event.position = pos
-	event.global_position = pos
-	_viewport.push_input(event)
-
-
-func _tap(tp: HapticFingerTrigger) -> void:
-	tp.trigger_fix_pressure(TAP_INTENSITY)
-	await get_tree().create_timer(0.12).timeout
-	if is_instance_valid(tp):
-		tp.remove_haptics()
-
-
-func _set_touch_points_visible(v: bool) -> void:
+# The palm's frame when the hand is tracked; a fingertip's turns as the pinch curls the finger.
+func _hand_frame(hand: int, index_tip: HapticFingerTrigger) -> Transform3D:
 	var hub := HexRManager.get_instance()
-	if hub == null:
-		return
-	for hand in 2:
-		var h := hub.tracked_hand(hand)
-		if h:
-			h.show_touch_points = v
+	var tracked := hub.tracked_hand(hand) if hub else null
+	if tracked and tracked.is_joint_valid(XRHandTracker.HAND_JOINT_PALM):
+		return tracked.get_joint_global_transform(XRHandTracker.HAND_JOINT_PALM)
+	return index_tip.global_transform

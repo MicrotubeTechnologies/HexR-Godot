@@ -615,27 +615,36 @@ Picking up marks the hand as grabbing on its Pressure Controller (opening the ha
 
 *extends `Node3D` · `addons/hexr/ui/hexr_floating_menu.gd`*
 
-The HexR menu as a panel in the room (port of the Unity package's HexRFloatingMenu): press its buttons with a fingertip, move it by pinching its header. It stays where it is put, and does not follow the head; call `recenter()` to bring it in front of the wearer.
+The HexR menu as a panel in the room (port of the Unity package's HexRFloatingMenu): press its buttons with a fingertip, move it by pinching its header. It stays where it is put and does not follow the head; `recenter()` brings it in front of the wearer.
 
-Each press gives the pressing finger a short tap.
+Every button has a press volume of its own, as in Unity: the index finger presses on entry, feels a held press while it stays in, and can press again 0.2 s after it leaves. The volume reaches through the panel, so a finger from either side works.
+
+One panel serves the whole session: the first one moves to the scene tree's root and outlives scene changes, rebuilding its SCENES and DEMOS for each new scene; a later scene's copy stands down. Its origin is the top edge of the header, which is what you grab.
 
 ### Inspector properties
 
-- **`panel_width := 0.26`** — Panel width in metres.
-- **`show_haptics_readout := true`**
-- **`scenes: PackedStringArray = []`** — Scene paths offered on the panel. Empty hides the section.
-- **`spawn_distance := 0.65`** — Where `recenter()` puts the panel, relative to the head.
-- **`spawn_height_offset := -0.2`**
-- **`spawn_side_offset := -0.35`**
-- **`recenter_on_start := false`** — Bring the panel in front of the wearer when the scene starts.
+- **`spawn_distance := 0.65`** — How far in front of the head `recenter()` puts the panel, in metres.
+- **`spawn_side_offset := -0.35`** — How far to the side, in metres; negative is to the left.
+- **`spawn_height_offset := -0.2`** — How far above (or below, negative) the eyes.
+- **`recenter_on_start := false`** — Bring the panel in front of the wearer when the app starts.
+- **`panel_width := 0.26`** — Panel width in metres. Height follows from the contents.
+- **`show_scene_switcher := true`** — One button per scene in the project setting `hexr/scenes` (Godot's stand-in for Unity's Build Settings), when it lists two or more.
+- **`show_demo_groups := true`** — One button per "... Demo Components" node in the scene, one of them shown at a time.
+- **`show_haptics_readout := true`** — What each channel of each glove was last told to do.
+- **`preview_in_editor := true`** — Draw the panel in the editor's 3D view. The preview is never saved into the scene.
 
 ### Properties
 
-- **`panel: HexRMenuPanel`**
+- **`static instance: HexRFloatingMenu`** — The live panel, so anything can call `recenter()`. Null when there is none.
+- **`panel: HexRMenuPanel`** — The 2D content.
 
 ### Methods
 
-- **`recenter() -> void`** — Puts the panel in front of the wearer's head, facing them.
+- **`recenter() -> void`** — Puts the panel in front of the wearer's head, facing them. Safe to call any time.
+
+### Constants
+
+- **`PRESS_DEPTH_PX := 30.0`** — Unity's press depth: 30 of its panel's 360 pixels, centred on the panel.
 
 ## HexRRemote
 
@@ -706,7 +715,7 @@ source and in Godot's built-in help.
 | `HexRDeviceStore` | `addons/hexr/core/hexr_device_store.gd` | Remembers which physical glove each hand uses, so a reconnect skips the scan and a second glove for the same hand in range is not picked by mistake. |
 | `HexRF32` | `addons/hexr/core/hexr_f32.gd` | 32-bit float arithmetic for the glove encoder. |
 | `HexRFrames` | `addons/hexr/core/hexr_frames.gd` | Splitting concatenated outbound frames. |
-| `HexRMenuPanel` | `addons/hexr/ui/hexr_menu_panel.gd` | The HexR menu's 2D content: glove connection, battery and pump, a live haptics readout, and a few tools. |
+| `HexRMenuPanel` | `addons/hexr/ui/hexr_menu_panel.gd` | The HexR menu's 2D content, laid out and styled as the Unity package's floating menu (its ARIS look): a header that is also the grab handle, then GLOVES, VIEW, HAPTICS, SCENES and DEMOS. |
 | `HexRRemoteCommands` | `addons/hexr/remote/hexr_remote_commands.gd` | Runs a phone's requests against the gloves and the app (port of the Unity package's RemoteCommands). |
 | `HexRRemoteHaptics` | `addons/hexr/remote/hexr_remote_haptics.gd` | The haptics lines HexR Remote sends: what each glove channel was told to do, whenever it changes (port of the Unity package's RemoteHaptics). |
 | `HexRRemoteProtocol` | `addons/hexr/remote/hexr_remote_protocol.gd` | HexR Remote protocol, version 1: the messages a phone (the HexR Companion's Headsets tab) and a headset exchange. |

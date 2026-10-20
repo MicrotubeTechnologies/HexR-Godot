@@ -44,7 +44,7 @@ const PARITY := {
 	"HexRInteractableHaptics": ["fire_on", "thumb", "index", "middle", "ring", "pinky", "palm", "strength",
 			"follow_grip", "min_strength"],
 	"HexRFloatingMenu": ["recenter", "spawn_distance", "spawn_side_offset", "spawn_height_offset",
-			"panel_width", "show_haptics_readout"],
+			"panel_width", "show_haptics_readout", "show_scene_switcher", "show_demo_groups", "preview_in_editor"],
 	"HexRRemote": ["register_command", "unregister_command", "phones_connected", "phones_watching",
 			"allow_glove_control", "allow_video", "expose_scenes"],
 	"HaptGloveCollidersVisualizer": ["collider_toggle", "show", "hide", "set_visible", "is_showing", "refresh"],

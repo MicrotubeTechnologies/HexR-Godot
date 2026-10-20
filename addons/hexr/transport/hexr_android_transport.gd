@@ -43,6 +43,10 @@ func needs_permissions() -> bool:
 	return not _plugin.hasPermissions()
 
 
+func permission_name() -> String:
+	return "Location" if _plugin.getApiLevel() < 31 else "Bluetooth"
+
+
 func request_permissions() -> void:
 	_plugin.requestPermissions()
 

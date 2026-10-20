@@ -341,7 +341,7 @@ func _schedule_retry(why: String) -> void:
 		_connect_requested = false
 		_retry_attempt = 0
 		_watchdog_at_ms = -1
-		_set_status("%s not found — check Bluetooth, then try again" % side())
+		_set_status("%s not found — check Bluetooth permissions, then try again" % side())
 		connect_campaign_ended.emit(which_hand)
 		return
 	var delay: float = RETRY_BACKOFF_S[mini(_retry_attempt, RETRY_BACKOFF_S.size() - 1)]
@@ -353,7 +353,8 @@ func _schedule_retry(why: String) -> void:
 
 func _permission_denied() -> void:
 	_connect_requested = false
-	_set_status("Bluetooth permission refused — allow Nearby devices for this app in Settings")
+	_set_status("%s blocked — allow %s in system settings, then try again"
+			% [side(), _transport.permission_name() if _transport else "Bluetooth"])
 	bluetooth_connection_failed.emit(which_hand)
 	connect_campaign_ended.emit(which_hand)
 

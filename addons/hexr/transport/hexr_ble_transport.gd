@@ -65,6 +65,12 @@ func needs_permissions() -> bool:
 	return false
 
 
+## What the system calls the permission scanning needs, for messages: "Bluetooth" (Nearby
+## devices), or "Location" on Android 11 and older.
+func permission_name() -> String:
+	return "Bluetooth"
+
+
 func request_permissions() -> void:
 	permissions_result.emit(true)
 
